@@ -1,0 +1,76 @@
+{
+    "name": "b7s/laravelwhisper",
+    "description": "Transform audio into text with Whisper.cpp AI - directly in PHP",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Bruno",
+            "email": "b7s@outlook.com"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "symfony/process": "^6.0|^7.0"
+    },
+    "require-dev": {
+        "pestphp/pest": "^3.0",
+        "phpstan/phpstan": "^1.10"
+    },
+    "autoload": {
+        "psr-4": {
+            "LaravelWhisper\\": "src/"
+        },
+        "files": [
+            "src/helpers.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "LaravelWhisper\\Tests\\": "tests/"
+        }
+    },
+    "bin": [
+        "bin/whisper-setup",
+        "bin/whisper-status"
+    ],
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
+    "scripts": {
+        "test": "pest",
+        "analyse": "phpstan analyse",
+        "whisper:setup": "php bin/whisper-setup",
+        "whisper:status": "php bin/whisper-status",
+        "post-install-cmd": [
+            "@whisper:info"
+        ],
+        "post-update-cmd": [
+            "@whisper:info"
+        ],
+        "whisper:info": [
+            "echo ''",
+            "echo '╔══════════════════════════════════════════════════════════════╗'",
+            "echo '║              laravelwhisper Installed Successfully               ║'",
+            "echo '╚══════════════════════════════════════════════════════════════╝'",
+            "echo ''",
+            "echo '📦 Next step: Run setup to download Whisper binaries and models'",
+            "echo ''",
+            "echo '   vendor/bin/whisper-setup'",
+            "echo ''",
+            "echo '💡 Or with custom options:'",
+            "echo '   vendor/bin/whisper-setup --model=small.en'",
+            "echo ''",
+            "echo '📊 Check installation status:'",
+            "echo '   vendor/bin/whisper-status'",
+            "echo ''",
+            "echo '📖 Documentation: https://github.com/b7s/laravelwhisper'",
+            "echo ''"
+        ]
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

@@ -1,0 +1,88 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+/**
+ * laravelwhisper Status Command
+ * 
+ * Check the installation status of Whisper binaries and models.
+ */
+
+// Find autoload.php
+$autoloadPaths = [
+    __DIR__ . '/../vendor/autoload.php',
+    __DIR__ . '/../../../autoload.php',
+];
+
+$autoloadPath = null;
+foreach ($autoloadPaths as $path) {
+    if (file_exists($path)) {
+        $autoloadPath = $path;
+        break;
+    }
+}
+
+if ($autoloadPath === null) {
+    echo "Error: Could not find autoload.php\n";
+    echo "Please run: composer install\n";
+    exit(1);
+}
+
+require $autoloadPath;
+
+use LaravelWhisper\Config;
+use LaravelWhisper\Whisper;
+
+// Create service
+$config = new Config();
+$whisper = new Whisper($config);
+
+// Display header
+echo "\n";
+echo "╔══════════════════════════════════════════════════════════════╗\n";
+echo "║              laravelwhisper Installation Status                  ║\n";
+echo "╚══════════════════════════════════════════════════════════════╝\n";
+echo "\n";
+
+// Show configuration
+echo "📋 Configuration:\n";
+echo "   Model:    {$config->model}\n";
+echo "   Language: {$config->language}\n";
+echo "   Data Dir: {$config->dataDir}\n";
+echo "\n";
+
+// Check status
+echo "📊 Installation Status:\n";
+$status = $whisper->getStatus();
+
+$binaryStatus = $status['binary'] ? '✓ Installed' : '✗ Missing';
+$modelStatus = $status['model'] ? '✓ Installed' : '✗ Missing';
+$ffmpegStatus = $status['ffmpeg'] ? '✓ Installed' : '✗ Missing';
+$gpuStatus = $status['gpu'] ? '✓ Available' : '✗ Not available';
+
+echo "   Binary:  {$binaryStatus}\n";
+echo "   Model:   {$modelStatus}\n";
+echo "   FFmpeg:  {$ffmpegStatus}\n";
+echo "   GPU:     {$gpuStatus}\n";
+echo "\n";
+
+// Overall status
+$isReady = $status['binary'] && $status['model'] && $status['ffmpeg'];
+
+if ($isReady) {
+    echo "✅ Whisper is ready to use!\n";
+    echo "\n";
+    echo "📚 Quick Start:\n";
+    echo "   \$whisper = new Whisper();\n";
+    echo "   \$text = \$whisper->audio('/path/to/audio.mp3')->text();\n";
+    echo "\n";
+} else {
+    echo "⚠️  Whisper is not fully configured.\n";
+    echo "\n";
+    echo "🔧 Run setup to install missing components:\n";
+    echo "   vendor/bin/whisper-setup\n";
+    echo "\n";
+}
+
+exit($isReady ? 0 : 1);
