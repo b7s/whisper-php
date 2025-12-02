@@ -95,9 +95,9 @@ final class Transcription
     /**
      * @throws WhisperException
      */
-    public function text(): string
+    public function toText(): string
     {
-        return $this->run()->text();
+        return $this->run()->toText();
     }
 
     /**
@@ -131,7 +131,7 @@ final class Transcription
     /**
      * @throws WhisperException
      */
-    public function toJson(bool $pretty = true): string
+    public function toJson(bool $pretty = false): string
     {
         $this->options->withTimestamps();
         return $this->run()->toJson($pretty);

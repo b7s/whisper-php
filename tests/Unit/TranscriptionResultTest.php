@@ -7,7 +7,7 @@ use LaravelWhisper\TranscriptionResult;
 test('transcription result can be created with text only', function () {
     $result = new TranscriptionResult('Hello world');
 
-    expect($result->text())->toBe('Hello world')
+    expect($result->toText())->toBe('Hello world')
         ->and($result->segments())->toBe([])
         ->and($result->detectedLanguage())->toBeNull();
 });
@@ -20,7 +20,7 @@ test('transcription result can be created with segments', function () {
 
     $result = new TranscriptionResult('Hello world', $segments);
 
-    expect($result->text())->toBe('Hello world')
+    expect($result->toText())->toBe('Hello world')
         ->and($result->segments())->toBe($segments);
 });
 

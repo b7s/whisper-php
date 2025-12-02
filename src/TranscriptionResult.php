@@ -15,7 +15,7 @@ final class TranscriptionResult
         private readonly ?string $detectedLanguage = null,
     ) {}
 
-    public function text(): string
+    public function toText(): string
     {
         return $this->text;
     }
@@ -54,9 +54,10 @@ final class TranscriptionResult
         return $output;
     }
 
-    public function toJson(bool $pretty = true): string
+    public function toJson(bool $pretty = false): string
     {
         $flags = JSON_UNESCAPED_UNICODE;
+
         if ($pretty) {
             $flags |= JSON_PRETTY_PRINT;
         }

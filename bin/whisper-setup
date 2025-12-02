@@ -161,7 +161,7 @@ try {
         echo "   use LaravelWhisper\\Whisper;\n";
         echo "\n";
         echo "   \$whisper = new Whisper();\n";
-        echo "   \$text = \$whisper->audio('/path/to/audio.mp3')->text();\n";
+        echo "   \$text = \$whisper->audio('/path/to/audio.mp3')->toText();\n";
         echo "   echo \$text;\n";
         echo "\n";
         echo "📖 Documentation: https://github.com/b7s/laravelwhisper\n";

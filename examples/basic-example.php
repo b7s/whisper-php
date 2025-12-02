@@ -87,7 +87,7 @@ echo "════════════════════════�
 echo "Example 1: Simple Transcription\n";
 echo "═══════════════════════════════════════════════════════════════\n";
 
-$text = $whisper->audio($audioPath)->text();
+$text = $whisper->audio($audioPath)->toText();
 echo "📝 Transcription:\n{$text}\n\n";
 
 // ----------------------------------------------------------------------------
@@ -118,7 +118,7 @@ echo "📝 Transcription:\n{$text}\n\n";
 // $result = $whisper->audio($audioPath)->run();
 // $language = $result->detectedLanguage();
 // echo "🌍 Detected language: {$language}\n";
-// echo "📝 Text: {$result->text()}\n\n";
+// echo "📝 Text: {$result->toText()}\n\n";
 
 // ----------------------------------------------------------------------------
 // Example 4: Translation to English
@@ -129,7 +129,7 @@ echo "📝 Transcription:\n{$text}\n\n";
 //
 // $translated = $whisper->audio($audioPath)
 //     ->toEnglish()
-//     ->text();
+//     ->toText();
 // echo "🌐 English translation:\n{$translated}\n\n";
 
 // ----------------------------------------------------------------------------
@@ -164,7 +164,7 @@ echo "📝 Transcription:\n{$text}\n\n";
 //
 // $text = $whisper->audio($audioPath)
 //     ->improveDecode(5)  // Higher = better quality, slower
-//     ->text();
+//     ->toText();
 // echo "📝 High-quality transcription:\n{$text}\n\n";
 
 // ----------------------------------------------------------------------------
@@ -194,13 +194,13 @@ echo "📝 Transcription:\n{$text}\n\n";
 // // Medical transcription
 // $text = $whisper->audio($audioPath)
 //     ->context('Medical terms: hypertension, cardiovascular, diagnosis, prescription')
-//     ->text();
+//     ->toText();
 // echo "🏥 Medical transcription:\n{$text}\n\n";
 //
 // // Technical transcription
 // $text = $whisper->audio($audioPath)
 //     ->context('Technology: API, SDK, Kubernetes, microservices, Docker')
-//     ->text();
+//     ->toText();
 // echo "💻 Technical transcription:\n{$text}\n\n";
 
 // ----------------------------------------------------------------------------
@@ -232,7 +232,7 @@ echo "📝 Transcription:\n{$text}\n\n";
 //     ->onProgress(function (int $percent) {
 //         echo "\r⏳ Progress: {$percent}%";
 //     })
-//     ->text();
+//     ->toText();
 // echo "\n✓ Completed!\n";
 // echo "📝 Result: {$text}\n\n";
 
@@ -253,7 +253,7 @@ echo "📝 Transcription:\n{$text}\n\n";
 //
 // echo "\n";
 // echo "🌍 Language: {$result->detectedLanguage()}\n";
-// echo "📝 Transcription:\n{$result->text()}\n\n";
+// echo "📝 Transcription:\n{$result->toText()}\n\n";
 // echo "👥 Segments with speakers:\n";
 // foreach ($result->segments() as $segment) {
 //     $speaker = "Speaker " . ($segment['speaker'] ?? 0);

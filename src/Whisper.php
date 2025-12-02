@@ -9,18 +9,19 @@ use LaravelWhisper\Exceptions\WhisperException;
 final class Whisper
 {
     private readonly WhisperPlatformDetector $platform;
-    private readonly WhisperPathResolver $paths;
+    private WhisperPathResolver $paths;
     private readonly WhisperDownloader $downloader;
-    private readonly WhisperTranscriber $transcriber;
+    private WhisperTranscriber $transcriber;
     private readonly Logger $logger;
+    private Config $config;
 
     public function __construct(?Config $config = null, ?Logger $logger = null)
     {
         $this->logger = $logger ?? new NullLogger();
-        $config ??= new Config();
+        $this->config = $config ?? new Config();
 
         $this->platform = new WhisperPlatformDetector();
-        $this->paths = new WhisperPathResolver($this->platform, $config);
+        $this->paths = new WhisperPathResolver($this->platform, $this->config);
         $this->downloader = new WhisperDownloader($this->platform, $this->paths, $this->logger);
         $this->transcriber = new WhisperTranscriber($this->platform, $this->paths, $this->logger);
     }
@@ -36,7 +37,7 @@ final class Whisper
     /**
      * @throws WhisperException
      * @return string|array<int, array{start: string, end: string, text: string}>
-     * @deprecated Use audio()->text() or audio()->segments() instead
+     * @deprecated Use audio()->toText() or audio()->segments() instead
      */
     public function transcribe(string $audioPath, bool $withTimestamps = false): string|array
     {
@@ -66,13 +67,15 @@ final class Whisper
     }
 
     /**
-     * @return array{binary: bool, model: bool, ffmpeg: bool, gpu: bool}
+     * @return array{binary: bool, model: bool, current_model: string, available_models: array<string>, ffmpeg: bool, gpu: bool}
      */
     public function getStatus(): array
     {
         return [
             'binary' => file_exists($this->paths->getBinaryPath()),
             'model' => file_exists($this->paths->getModelPath()),
+            'current_model' => $this->getCurrentModel(),
+            'available_models' => $this->getAvailableModels(),
             'ffmpeg' => $this->downloader->isFfmpegAvailable(),
             'gpu' => $this->platform->hasGpuSupport(),
         ];
@@ -127,8 +130,115 @@ final class Whisper
         return $this->downloader->downloadModel($model);
     }
 
+    /**
+     * Switch to a different model. Downloads the model if not available.
+     *
+     * @throws WhisperException
+     */
+    public function useModel(string $model = 'base'): self
+    {
+        // Update config with new model
+        $this->config = new Config(
+            dataDir: $this->config->dataDir,
+            binaryPath: $this->config->binaryPath,
+            modelPath: $this->config->modelPath,
+            ffmpegPath: $this->config->ffmpegPath,
+            model: $model,
+            language: $this->config->language,
+        );
+
+        // Recreate paths and transcriber with new config
+        $this->paths = new WhisperPathResolver($this->platform, $this->config);
+        $this->transcriber = new WhisperTranscriber($this->platform, $this->paths, $this->logger);
+
+        // Download model if not available
+        if (!file_exists($this->paths->getModelPath())) {
+            $this->logger->info("Model [{$model}] not found, downloading (this may take some time)...");
+            $this->downloadModel($model);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Get the currently configured model name.
+     */
+    public function getCurrentModel(): string
+    {
+        return $this->config->model;
+    }
+
+    /**
+     * Get list of available (downloaded) models.
+     *
+     * @return array<string>
+     */
+    public function getAvailableModels(): array
+    {
+        $modelsDir = dirname($this->paths->getModelPath());
+        if (!is_dir($modelsDir)) {
+            return [];
+        }
+
+        $models = [];
+        $files = scandir($modelsDir);
+        
+        if ($files === false) {
+            return [];
+        }
+        
+        foreach ($files as $file) {
+            if (preg_match('/^ggml-(.+)\.bin$/', $file, $matches)) {
+                $models[] = $matches[1];
+            }
+        }
+
+        return $models;
+    }
+
+    /**
+     * Check if a specific model is downloaded.
+     */
+    public function hasModel(string $model): bool
+    {
+        $modelPath = dirname($this->paths->getModelPath()) . "/ggml-{$model}.bin";
+        return file_exists($modelPath);
+    }
+
     public function getFfmpegPath(): string
     {
         return $this->paths->getFfmpegPath();
+    }
+
+    /**
+     * Get the path to a specific model file.
+     */
+    public function getModelPath(?string $model = null): string
+    {
+        $model ??= $this->config->model;
+        return dirname($this->paths->getModelPath()) . "/ggml-{$model}.bin";
+    }
+
+    /**
+     * Delete a model file to force re-download.
+     */
+    public function deleteModel(string $model): bool
+    {
+        $modelPath = $this->getModelPath($model);
+        if (file_exists($modelPath)) {
+            return @unlink($modelPath);
+        }
+        return true;
+    }
+
+    /**
+     * Re-download a model (deletes existing and downloads fresh).
+     *
+     * @throws WhisperException
+     */
+    public function redownloadModel(string $model): bool
+    {
+        $this->deleteModel($model);
+        return $this->downloadModel($model);
     }
 }

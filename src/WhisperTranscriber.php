@@ -25,7 +25,7 @@ final class WhisperTranscriber
         if ($withTimestamps) {
             $options->withTimestamps();
         }
-        return $this->transcribe($audioPath, $options)->text();
+        return $this->transcribe($audioPath, $options)->toText();
     }
 
     /**
@@ -96,7 +96,7 @@ final class WhisperTranscriber
      */
     private function convertFileToWav(string $inputPath): string
     {
-        $tempWavPath = $this->paths->getTempPath('audio_wav_') . '.wav';
+        $tempWavPath = $this->paths->getTempPath('audio_laravel_whisper_wav_') . '.wav';
         $ffmpegPath = $this->paths->getFfmpegPath();
 
         $process = new Process([
@@ -195,7 +195,7 @@ final class WhisperTranscriber
 
         $output = trim($process->getOutput());
         $errorOutput = $process->getErrorOutput();
-        $detectedLanguage = $this->extractDetectedLanguage($errorOutput);
+        $detectedLanguage = $this->extractDetectedLanguage($errorOutput, $options->getLanguage());
 
         $this->logger->info('Whisper transcription completed', [
             'length' => \strlen($output),
@@ -288,17 +288,24 @@ final class WhisperTranscriber
         ];
     }
 
-    private function extractDetectedLanguage(string $errorOutput): ?string
+    private function extractDetectedLanguage(string $errorOutput, ?string $specifiedLanguage): ?string
     {
+        // If user specified a language (not 'auto'), return it
+        if ($specifiedLanguage !== null && $specifiedLanguage !== 'auto') {
+            return $specifiedLanguage;
+        }
+
         // whisper.cpp outputs various formats depending on version:
         // "auto-detected language: en (p = 0.97)"
         // "whisper_full_with_state: auto-detected language = en"
         // "detected language: en"
+        // "whisper_full_default: processing 1600 samples, 0.1 sec, 1 threads, 1 processors, lang = en, task = transcribe"
         
         $patterns = [
             '/auto-detected language:\s*(\w+)/i',
             '/auto-detected language\s*=\s*(\w+)/i',
             '/detected language:\s*(\w+)/i',
+            '/lang\s*=\s*(\w{2,3})/i',
             '/language:\s*(\w{2,3})(?:\s|$|\()/i',
         ];
         

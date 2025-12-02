@@ -124,7 +124,8 @@ final class WhisperDownloader
      */
     public function downloadModel(string $model = 'base'): bool
     {
-        $modelPath = $this->paths->getModelPath();
+        $modelsDir = dirname($this->paths->getModelPath());
+        $modelPath = "{$modelsDir}/ggml-{$model}.bin";
 
         if (file_exists($modelPath)) {
             return true;
@@ -134,7 +135,7 @@ final class WhisperDownloader
 
         $modelUrl = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-{$model}.bin";
 
-        $this->logger->info('Downloading whisper model', ['url' => $modelUrl]);
+        $this->logger->info('Downloading whisper model', ['model' => $model, 'url' => $modelUrl]);
 
         $process = new Process([
             'curl', '-L', '-f',
@@ -149,6 +150,7 @@ final class WhisperDownloader
         if (! $process->isSuccessful()) {
             $error = trim($process->getErrorOutput());
             $this->logger->error('Failed to download Whisper model', [
+                'model' => $model,
                 'error' => $error,
                 'output' => $process->getOutput(),
             ]);

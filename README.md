@@ -88,13 +88,52 @@ require 'vendor/autoload.php';
 use LaravelWhisper\Whisper;
 use LaravelWhisper\Config;
 
-// Create service with default configuration
+// Create service with default configuration (uses 'base' model)
 $whisper = new Whisper();
 
 // Simple transcription
-$text = $whisper->audio('/path/to/audio.mp3')->text();
+$text = $whisper->audio('/path/to/audio.mp3')->toText();
 echo $text;
 ```
+
+## Switching Models
+
+You can easily switch between models at runtime. The model will be downloaded automatically if not available:
+
+```php
+$whisper = new Whisper();
+
+// Use a different model (downloads if needed - This may take some time the first time)
+$text = $whisper
+    ->useModel('small')
+    ->audio('/path/to/audio.mp3')
+    ->toText();
+
+// Switch to English-only model for better English accuracy
+$text = $whisper
+    ->useModel('base.en')
+    ->audio('/path/to/english-audio.mp3')
+    ->toText();
+
+// Use large model for maximum accuracy
+$text = $whisper
+    ->useModel('large')
+    ->audio('/path/to/important-audio.mp3')
+    ->toText();
+
+// Check current model
+echo $whisper->getCurrentModel(); // 'large'
+
+// Check available (downloaded) models
+print_r($whisper->getAvailableModels()); // ['base', 'small', 'base.en', 'large']
+
+// Check if a specific model is downloaded
+if (!$whisper->hasModel('medium')) {
+    $whisper->downloadModel('medium');
+}
+```
+
+> See the language tests at [Examples Models](examples/example-models.php).
 
 ## Configuration
 
@@ -156,7 +195,7 @@ The library provides a fluent API for configuring transcriptions. Chain methods 
 
 ```php
 // Get plain text
-$text = $whisper->audio('/path/to/audio.mp3')->text();
+$text = $whisper->audio('/path/to/audio.mp3')->toText();
 
 // Get segments with timestamps
 $segments = $whisper->audio('/path/to/audio.mp3')->segments();
@@ -174,7 +213,7 @@ $segments = $whisper->audio('/path/to/audio.mp3')->segments();
 // Spanish audio → English text
 $text = $whisper->audio('/path/to/spanish-audio.mp3')
     ->toEnglish()
-    ->text();
+    ->toText();
 // Output: "Hello, how are you?" (even if spoken in Spanish)
 ```
 
@@ -183,25 +222,47 @@ $text = $whisper->audio('/path/to/spanish-audio.mp3')
 - Creating English subtitles for international videos
 - Processing multilingual customer support calls
 
-### Language Detection
+### Language Detection and Specification
 
-**What it does:** Automatically identifies which language is being spoken in the audio. Returns ISO language codes like 'en', 'pt', 'es', 'fr', etc.
+**Automatic Detection (default):**
+By default, Whisper automatically detects the language being spoken. This works best with multilingual models (`base`, `small`, `medium`, `large`).
 
 ```php
-// Detect the spoken language
-$language = $whisper->audio('/path/to/audio.mp3')->detectLanguage();
-// Returns: 'en' (English), 'pt' (Portuguese), 'es' (Spanish), etc.
-
-// Or get it from the result
+// Auto-detect language (default behavior)
 $result = $whisper->audio('/path/to/audio.mp3')->run();
-echo $result->detectedLanguage(); // 'en'
-echo $result->text();
+echo $result->detectedLanguage(); // 'en', 'pt', 'es', 'fr', etc.
+echo $result->toText();
+
+// Or use the shorthand
+$language = $whisper->audio('/path/to/audio.mp3')->detectLanguage();
+```
+
+**Specify Language for Better Accuracy:**
+If you know the audio language, specifying it improves accuracy and speed:
+
+```php
+// Specify Portuguese for better accuracy
+$text = $whisper->audio('/path/to/portuguese-audio.mp3')
+    ->fromLanguage('pt')
+    ->toText();
+
+// Specify Spanish
+$text = $whisper->audio('/path/to/spanish-audio.mp3')
+    ->fromLanguage('es')
+    ->toText();
+
+// The detected language will match what you specified
+$result = $whisper->audio('/path/to/audio.mp3')
+    ->fromLanguage('pt')
+    ->run();
+echo $result->detectedLanguage(); // 'pt'
 ```
 
 **Use cases:**
 - Routing calls to appropriate language support teams
 - Organizing multilingual audio libraries
 - Triggering language-specific processing workflows
+- Improving transcription accuracy when language is known
 
 ### Export Formats (SRT, VTT, JSON, CSV)
 
@@ -215,8 +276,8 @@ $srt = $whisper->audio('/path/to/audio.mp3')->toSrt();
 $vtt = $whisper->audio('/path/to/audio.mp3')->toVtt();
 
 // JSON - Structured data for APIs and web applications
-$json = $whisper->audio('/path/to/audio.mp3')->toJson(); // Pretty-printed by default
-$json = $whisper->audio('/path/to/audio.mp3')->toJson(false); // Compact JSON
+$json = $whisper->audio('/path/to/audio.mp3')->toJson(); // Compact JSON
+$json = $whisper->audio('/path/to/audio.mp3')->toJson(true); // Pretty-printed by default
 
 // CSV - Spreadsheet format for data analysis
 $csv = $whisper->audio('/path/to/audio.mp3')->toCsv();
@@ -239,7 +300,7 @@ $whisper->audio('/path/to/audio.mp3')->saveTo('/path/to/output.vtt');
 // Use beam search for better accuracy (slower but more accurate)
 $text = $whisper->audio('/path/to/audio.mp3')
     ->improveDecode(5) // beam size: 1-10 (higher = better quality, slower)
-    ->text();
+    ->toText();
 ```
 
 **When to use:**
@@ -282,17 +343,17 @@ $segments = $whisper->audio('/path/to/audio.mp3')
 // Guide transcription with domain-specific context
 $text = $whisper->audio('/path/to/medical-audio.mp3')
     ->context('Medical terminology: hypertension, cardiovascular, diagnosis, patient')
-    ->text();
+    ->toText();
 
 // Technical content
 $text = $whisper->audio('/path/to/tech-talk.mp3')
     ->context('Technology terms: API, SDK, framework, Kubernetes, microservices')
-    ->text();
+    ->toText();
 
 // Names and brands
 $text = $whisper->audio('/path/to/meeting.mp3')
     ->context('Attendees: João Silva, Maria Santos. Company: Acme Corp')
-    ->text();
+    ->toText();
 ```
 
 **Use cases:**
@@ -346,9 +407,9 @@ $segments = $whisper->audio('/path/to/conversation.mp3')
 $text = $whisper->audio('/path/to/long-audio.mp3')
     ->onProgress(function (int $percent) {
         echo "Progress: {$percent}%\n";
-        // Update progress bar, database, websocket, etc.
+        // Update progress bar, database, websocket, stream, etc.
     })
-    ->text();
+    ->toText();
 ```
 
 **Use cases:**
@@ -363,7 +424,7 @@ $text = $whisper->audio('/path/to/long-audio.mp3')
 $whisper = new Whisper();
 
 // Simple and direct
-echo $whisper->audio('/path/to/audio-1.mp3')->text();
+echo $whisper->audio('/path/to/audio-1.mp3')->toText();
 
 // Combine multiple options
 $result = $whisper
@@ -380,8 +441,8 @@ $result = $whisper
 echo $result->detectedLanguage();  // Auto‑detects language
 print_r(echo $result->segments()); // Array: text, timestamps, speakers
 
-echo $result->text();   // Pure text
-echo $result->toJson(); // or: toJson(false), toCsv, toVtt, toSrt
+echo $result->toText(); // Pure text
+echo $result->toJson(); // or: toJson(true), toCsv, toVtt, toSrt
 $result->saveTo('/path/to/output.srt'); // Save directly to file (auto detects format)
 ```
 
@@ -431,7 +492,32 @@ Each model (except `large`) comes in two variants:
 
 ## Real-World Examples
 
-### Example 1: Creating Subtitles for a Video
+### Example 1: Switching Models for Different Accuracy Needs
+
+```php
+$whisper = new Whisper();
+
+// Quick transcription with base model (default)
+$quickText = $whisper->audio('/path/to/meeting.mp3')->toText();
+
+// Switch to small model for better accuracy
+$whisper->useModel('small');
+$betterText = $whisper->audio('/path/to/important-call.mp3')
+    ->fromLanguage('pt')  // Specify language for better accuracy
+    ->toText();
+
+// Switch to large model for critical transcription
+$whisper->useModel('large');
+$criticalText = $whisper->audio('/path/to/legal-deposition.mp3')
+    ->improveDecode(8)
+    ->fromLanguage('en')
+    ->toText();
+
+// Check what models you have
+print_r($whisper->getAvailableModels()); // ['base', 'small', 'large']
+```
+
+### Example 2: Creating Subtitles for a Video
 
 ```php
 // Generate accurate subtitles with speaker identification
@@ -442,7 +528,7 @@ $whisper->audio('/path/to/interview.mp4')
     ->saveTo('subtitles.srt');
 ```
 
-### Example 2: Transcribing Medical Consultation
+### Example 3: Transcribing Medical Consultation
 
 ```php
 // High-accuracy medical transcription
@@ -457,7 +543,7 @@ $result->saveTo('consultation.txt');
 $result->saveTo('consultation.json');
 ```
 
-### Example 3: Multilingual Podcast Processing
+### Example 4: Multilingual Podcast Processing
 
 ```php
 // Detect language and translate to English
@@ -472,12 +558,12 @@ if ($language !== 'en') {
     // Translate to English
     $english = $whisper->audio('/path/to/podcast.mp3')
         ->toEnglish()
-        ->text();
+        ->toText();
     echo "English translation: {$english}\n";
 }
 ```
 
-### Example 4: Processing Customer Support Calls
+### Example 5: Processing Customer Support Calls
 
 ```php
 // Transcribe with progress tracking
@@ -498,7 +584,7 @@ foreach ($segments as $segment) {
 }
 ```
 
-### Example 5: Batch Processing with Queue
+### Example 6: Batch Processing with Queue
 
 ```php
 // Process multiple files with different settings
@@ -536,13 +622,13 @@ $result = $whisper->audio('/path/to/audio.mp3')
     ->run();
 
 // Access different formats
-$result->text();              // Plain text
+$result->toText();            // Plain text
 $result->segments();          // Array of segments
 $result->detectedLanguage();  // Detected language code
 $result->toSrt();             // SRT format string
 $result->toVtt();             // VTT format string
-$result->toJson();            // JSON format string (pretty-printed)
-$result->toJson(false);       // JSON format string (compact)
+$result->toJson();            // JSON format string (compact)
+$result->toJson(true);        // JSON format string (pretty-printed)
 $result->toCsv();             // CSV format string
 $result->saveTo('file.srt');  // Save to file
 ```
@@ -582,8 +668,23 @@ $whisper = new Whisper(logger: new MyLogger());
 ## Testing
 
 ```bash
+# Run unit tests only
 composer test
+
+# Run all tests (including integration tests with audio files)
+./vendor/bin/pest
+
+# Run only integration tests (requires Whisper setup)
+./vendor/bin/pest --group=integration
+
+# Run specific test file
+./vendor/bin/pest tests/Feature/TranslationTest.php
+
+# Run PHPStan analysis
+composer analyse
 ```
+
+**Note:** Integration tests require Whisper to be set up and will download the `tiny` model (~75MB) for faster execution.
 
 ## License
 

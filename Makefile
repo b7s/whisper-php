@@ -111,7 +111,7 @@ release:
 	echo ""; \
 	echo "✅ Release v$$VERSION_INPUT created successfully!"; \
 	echo "📦 Packagist will automatically detect the new version."; \
-	echo "🔗 View release: https://github.com/parallite/parallite-php/releases/tag/v$$VERSION_INPUT"
+	echo "🔗 View release: https://github.com/b7s/laravelwhisper/releases/tag/v$$VERSION_INPUT"
 
 # Clean cache and temporary files
 clean:

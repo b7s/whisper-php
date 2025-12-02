@@ -75,7 +75,7 @@ if ($isReady) {
     echo "\n";
     echo "📚 Quick Start:\n";
     echo "   \$whisper = new Whisper();\n";
-    echo "   \$text = \$whisper->audio('/path/to/audio.mp3')->text();\n";
+    echo "   \$text = \$whisper->audio('/path/to/audio.mp3')->toText();\n";
     echo "\n";
 } else {
     echo "⚠️  Whisper is not fully configured.\n";
