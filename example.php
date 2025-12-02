@@ -31,7 +31,7 @@ $whisper = new Whisper();
 
 // Or with custom configuration
 // $config = new Config(
-//     model: 'base.en',        // Model size: tiny, base, small, medium, large
+//     model: 'base',           // Model size: tiny, base, small, medium, large
 //     language: 'auto',        // Language: auto, en, pt, es, fr, etc.
 //     dataDir: '/custom/path'  // Custom directory for binaries and models
 // );

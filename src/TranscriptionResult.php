@@ -54,13 +54,20 @@ final class TranscriptionResult
         return $output;
     }
 
-    public function toJson(): string
+    public function toJson(bool $pretty = true): string
     {
-        return json_encode([
+        $flags = JSON_UNESCAPED_UNICODE;
+        if ($pretty) {
+            $flags |= JSON_PRETTY_PRINT;
+        }
+
+        $json = json_encode([
             'text' => $this->text,
             'segments' => $this->segments,
             'language' => $this->detectedLanguage,
-        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+        ], $flags);
+
+        return $json !== false ? $json : '{}';
     }
 
     public function toCsv(): string

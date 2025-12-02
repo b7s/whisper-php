@@ -102,7 +102,7 @@ The `Config` class accepts the following parameters:
 
 ```php
 $config = new Config(
-    model: 'base.en',
+    model: 'base',
     language: 'auto',
     dataDir: '/custom/path',
     binaryPath: '/path/binary',
@@ -114,7 +114,7 @@ $whisper = new Whisper($config);
 ```
 
 **Parameters:**
-- `model`: Model to use (default: `base.en`) - See [Available Models](#available-models) section
+- `model`: Model to use (default: `base`) - See [Available Models](#available-models) section
 - `language`: Language for transcription (default: `auto`) - ISO language code or 'auto' for detection
 - `dataDir`: Directory to store binaries and models (default: `~/.local/share/laravelwhisper`)
 - `binaryPath`: Custom path to Whisper binary (optional)
@@ -125,7 +125,7 @@ $whisper = new Whisper($config);
 ### Model Installation
 
 ```bash
-# Install default model (base.en)
+# Install default model (base - multilingual with auto-detect)
 php ./vendor/bin/whisper-setup
 
 # Install specific model
@@ -136,7 +136,7 @@ php ./vendor/bin/whisper-setup --model=large
 
 ### Performance Tips
 
-1. **Start with `base.en`** - It's the sweet spot for most applications
+1. **Start with `base`** - It's the sweet spot for most applications with multilingual support
 2. **Use English-only models** when possible - They're faster and more accurate for English (ends with ".en")
 3. **Upgrade to `small`** if you need better accuracy
 4. **Use `medium` or `large`** only when accuracy is critical (they're much slower)
@@ -215,7 +215,8 @@ $srt = $whisper->audio('/path/to/audio.mp3')->toSrt();
 $vtt = $whisper->audio('/path/to/audio.mp3')->toVtt();
 
 // JSON - Structured data for APIs and web applications
-$json = $whisper->audio('/path/to/audio.mp3')->toJson();
+$json = $whisper->audio('/path/to/audio.mp3')->toJson(); // Pretty-printed by default
+$json = $whisper->audio('/path/to/audio.mp3')->toJson(false); // Compact JSON
 
 // CSV - Spreadsheet format for data analysis
 $csv = $whisper->audio('/path/to/audio.mp3')->toCsv();
@@ -380,7 +381,7 @@ echo $result->detectedLanguage();  // Auto‑detects language
 print_r(echo $result->segments()); // Array: text, timestamps, speakers
 
 echo $result->text();   // Pure text
-echo $result->toJson(); // or: toCsv, toVtt, toSrt
+echo $result->toJson(); // or: toJson(false), toCsv, toVtt, toSrt
 $result->saveTo('/path/to/output.srt'); // Save directly to file (auto detects format)
 ```
 
@@ -422,9 +423,10 @@ Each model (except `large`) comes in two variants:
 **For specific use cases:**
 - **Real-time transcription:** `tiny` or `tiny.en`
 - **Mobile/embedded devices:** `tiny` or `base`
-- **Podcasts/interviews:** `base.en` or `small.en`
+- **Podcasts/interviews (English):** `base.en` or `small.en`
+- **Podcasts/interviews (multilingual):** `base` or `small`
 - **Medical/legal (high accuracy):** `medium.en` or `large`
-- **Multiple languages:** `small` or `medium`
+- **Multiple languages with auto-detect:** `base` or `small` (default: `base`)
 - **Testing/development:** `tiny.en` (fastest downloads)
 
 ## Real-World Examples
@@ -539,7 +541,8 @@ $result->segments();          // Array of segments
 $result->detectedLanguage();  // Detected language code
 $result->toSrt();             // SRT format string
 $result->toVtt();             // VTT format string
-$result->toJson();            // JSON format string
+$result->toJson();            // JSON format string (pretty-printed)
+$result->toJson(false);       // JSON format string (compact)
 $result->toCsv();             // CSV format string
 $result->saveTo('file.srt');  // Save to file
 ```

@@ -47,7 +47,7 @@ if (isset($options['help'])) {
 
 // Create configuration
 $config = new Config(
-    model: $options['model'] ?? 'base.en',
+    model: $options['model'] ?? 'base',
     language: $options['language'] ?? 'auto',
     dataDir: $options['dir'] ?? null,
 );
@@ -190,7 +190,7 @@ function showHelp(): void
     echo "  vendor/bin/whisper-setup [options]\n";
     echo "\n";
     echo "Options:\n";
-    echo "  --model=MODEL       Model to download (default: base.en)\n";
+    echo "  --model=MODEL       Model to download (default: base)\n";
     echo "                      Available: tiny, tiny.en, base, base.en, small, small.en,\n";
     echo "                                 medium, medium.en, large\n";
     echo "\n";

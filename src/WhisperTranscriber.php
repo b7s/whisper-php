@@ -16,6 +16,7 @@ final class WhisperTranscriber
     ) {}
 
     /**
+     * @return ($withTimestamps is true ? array<int, array{start: string, end: string, text: string}> : string)
      * @throws WhisperException
      */
     public function transcribeFromPath(string $audioPath, bool $withTimestamps = false): string|array
@@ -193,12 +194,14 @@ final class WhisperTranscriber
         }
 
         $output = trim($process->getOutput());
-        $detectedLanguage = $this->extractDetectedLanguage($process->getErrorOutput());
+        $errorOutput = $process->getErrorOutput();
+        $detectedLanguage = $this->extractDetectedLanguage($errorOutput);
 
         $this->logger->info('Whisper transcription completed', [
             'length' => \strlen($output),
             'preview' => substr($output, 0, 100),
             'detected_language' => $detectedLanguage,
+            'stderr_preview' => substr($errorOutput, 0, 500),
         ]);
 
         return $this->buildResult($output, $options, $detectedLanguage);
@@ -287,10 +290,24 @@ final class WhisperTranscriber
 
     private function extractDetectedLanguage(string $errorOutput): ?string
     {
-        // whisper.cpp outputs: "auto-detected language: en (p = 0.97)"
-        if (preg_match('/auto-detected language:\s*(\w+)/i', $errorOutput, $matches)) {
-            return $matches[1];
+        // whisper.cpp outputs various formats depending on version:
+        // "auto-detected language: en (p = 0.97)"
+        // "whisper_full_with_state: auto-detected language = en"
+        // "detected language: en"
+        
+        $patterns = [
+            '/auto-detected language:\s*(\w+)/i',
+            '/auto-detected language\s*=\s*(\w+)/i',
+            '/detected language:\s*(\w+)/i',
+            '/language:\s*(\w{2,3})(?:\s|$|\()/i',
+        ];
+        
+        foreach ($patterns as $pattern) {
+            if (preg_match($pattern, $errorOutput, $matches)) {
+                return $matches[1];
+            }
         }
+        
         return null;
     }
 

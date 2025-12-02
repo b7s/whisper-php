@@ -17,20 +17,20 @@ beforeEach(function () {
 });
 
 test('transcription can be created', function () {
-    $transcription = new Transcription($this->transcriber, new NullLogger());
+    $transcription = new Transcription($this->transcriber);
 
     expect($transcription)->toBeInstanceOf(Transcription::class);
 });
 
 test('transcription can set audio file', function () {
-    $transcription = (new Transcription($this->transcriber, new NullLogger()))
+    $transcription = (new Transcription($this->transcriber))
         ->file('/path/to/audio.mp3');
 
     expect($transcription)->toBeInstanceOf(Transcription::class);
 });
 
 test('transcription is fluent with timestamps', function () {
-    $transcription = (new Transcription($this->transcriber, new NullLogger()))
+    $transcription = (new Transcription($this->transcriber))
         ->file('/path/to/audio.mp3')
         ->withTimestamps();
 
@@ -38,7 +38,7 @@ test('transcription is fluent with timestamps', function () {
 });
 
 test('transcription is fluent with translate', function () {
-    $transcription = (new Transcription($this->transcriber, new NullLogger()))
+    $transcription = (new Transcription($this->transcriber))
         ->file('/path/to/audio.mp3')
         ->toEnglish();
 
@@ -46,7 +46,7 @@ test('transcription is fluent with translate', function () {
 });
 
 test('transcription is fluent with language', function () {
-    $transcription = (new Transcription($this->transcriber, new NullLogger()))
+    $transcription = (new Transcription($this->transcriber))
         ->file('/path/to/audio.mp3')
         ->fromLanguage('pt');
 
@@ -54,7 +54,7 @@ test('transcription is fluent with language', function () {
 });
 
 test('transcription is fluent with prompt', function () {
-    $transcription = (new Transcription($this->transcriber, new NullLogger()))
+    $transcription = (new Transcription($this->transcriber))
         ->file('/path/to/audio.mp3')
         ->context('Hello world');
 
@@ -62,7 +62,7 @@ test('transcription is fluent with prompt', function () {
 });
 
 test('transcription is fluent with beam search', function () {
-    $transcription = (new Transcription($this->transcriber, new NullLogger()))
+    $transcription = (new Transcription($this->transcriber))
         ->file('/path/to/audio.mp3')
         ->improveDecode(5);
 
@@ -70,7 +70,7 @@ test('transcription is fluent with beam search', function () {
 });
 
 test('transcription is fluent with temperature', function () {
-    $transcription = (new Transcription($this->transcriber, new NullLogger()))
+    $transcription = (new Transcription($this->transcriber))
         ->file('/path/to/audio.mp3')
         ->temperature(0.5);
 
@@ -78,7 +78,7 @@ test('transcription is fluent with temperature', function () {
 });
 
 test('transcription is fluent with vad', function () {
-    $transcription = (new Transcription($this->transcriber, new NullLogger()))
+    $transcription = (new Transcription($this->transcriber))
         ->file('/path/to/audio.mp3')
         ->filterNonSpeech(0.6);
 
@@ -86,7 +86,7 @@ test('transcription is fluent with vad', function () {
 });
 
 test('transcription is fluent with speaker detection', function () {
-    $transcription = (new Transcription($this->transcriber, new NullLogger()))
+    $transcription = (new Transcription($this->transcriber))
         ->file('/path/to/audio.mp3')
         ->detectSpeakers();
 
@@ -94,7 +94,7 @@ test('transcription is fluent with speaker detection', function () {
 });
 
 test('transcription is fluent with progress callback', function () {
-    $transcription = (new Transcription($this->transcriber, new NullLogger()))
+    $transcription = (new Transcription($this->transcriber))
         ->file('/path/to/audio.mp3')
         ->onProgress(fn (int $p) => null);
 
@@ -102,7 +102,7 @@ test('transcription is fluent with progress callback', function () {
 });
 
 test('transcription can chain multiple options', function () {
-    $transcription = (new Transcription($this->transcriber, new NullLogger()))
+    $transcription = (new Transcription($this->transcriber))
         ->file('/path/to/audio.mp3')
         ->withTimestamps()
         ->toEnglish()
@@ -118,6 +118,6 @@ test('transcription can chain multiple options', function () {
 });
 
 test('transcription throws when no file is specified', function () {
-    $transcription = new Transcription($this->transcriber, new NullLogger());
+    $transcription = new Transcription($this->transcriber);
     $transcription->run();
 })->throws(LaravelWhisper\Exceptions\WhisperException::class, 'No audio file specified');

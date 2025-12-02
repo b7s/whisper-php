@@ -122,7 +122,7 @@ final class WhisperDownloader
     /**
      * @throws WhisperException
      */
-    public function downloadModel(string $model = 'base.en'): bool
+    public function downloadModel(string $model = 'base'): bool
     {
         $modelPath = $this->paths->getModelPath();
 

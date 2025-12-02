@@ -13,7 +13,6 @@ final class Transcription
 
     public function __construct(
         private readonly WhisperTranscriber $transcriber,
-        private readonly Logger $logger,
     ) {
         $this->options = new TranscriptionOptions();
     }
@@ -132,10 +131,10 @@ final class Transcription
     /**
      * @throws WhisperException
      */
-    public function toJson(): string
+    public function toJson(bool $pretty = true): string
     {
         $this->options->withTimestamps();
-        return $this->run()->toJson();
+        return $this->run()->toJson($pretty);
     }
 
     /**

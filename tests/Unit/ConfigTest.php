@@ -11,7 +11,7 @@ test('config can be created with default values', function () {
         ->and($config->binaryPath)->toBeNull()
         ->and($config->modelPath)->toBeNull()
         ->and($config->ffmpegPath)->toBeNull()
-        ->and($config->model)->toBe('base.en')
+        ->and($config->model)->toBe('base')
         ->and($config->language)->toBe('auto');
 });
 

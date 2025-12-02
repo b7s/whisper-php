@@ -30,7 +30,7 @@ final class Whisper
      */
     public function audio(string $audioPath): Transcription
     {
-        return (new Transcription($this->transcriber, $this->logger))->file($audioPath);
+        return (new Transcription($this->transcriber))->file($audioPath);
     }
 
     /**
@@ -122,7 +122,7 @@ final class Whisper
     /**
      * @throws WhisperException
      */
-    public function downloadModel(string $model = 'base.en'): bool
+    public function downloadModel(string $model = 'base'): bool
     {
         return $this->downloader->downloadModel($model);
     }
