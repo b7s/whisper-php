@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/laravel-whisper-logo.webp" width="340px" alt="PurrAI">
+<img src="docs/laravel-whisper-logo.webp" width="340px" alt="[Laravel Whisper]">
 
 
 # Laravel Whisper
