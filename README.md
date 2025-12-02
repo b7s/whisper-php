@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/laravel-whisper-logo.webp" width="340px" alt="[Laravel Whisper]">
+<img src="docs/laravel-whisper-logo-mini.webp" width="340px" alt="[Laravel Whisper]">
 
 
 # Laravel Whisper
@@ -8,8 +8,9 @@
 🎙️ **Transform audio into text with Whisper.cpp AI - directly in PHP!**
 
 A powerful, standalone PHP library that brings state-of-the-art speech recognition to your applications. Built on Whisper.cpp for blazing-fast performance, with zero Laravel dependencies. Transcribe, translate, and analyze audio in 99+ languages with a beautiful fluent API.
-
 </div>
+
+---
 
 ✨ **Features:**
 - 🚀 Fast local transcription (no API calls, no costs)
@@ -101,12 +102,12 @@ The `Config` class accepts the following parameters:
 
 ```php
 $config = new Config(
-    model: 'base.en',           // Model to use (default: base.en)
-    language: 'auto',           // Language code or 'auto' (default: auto)
-    dataDir: '/custom/path',    // Custom data directory (optional)
-    binaryPath: '/path/binary', // Custom binary path (optional)
-    modelPath: '/path/model',   // Custom model path (optional)
-    ffmpegPath: '/path/ffmpeg'  // Custom FFmpeg path (optional)
+    model: 'base.en',
+    language: 'auto',
+    dataDir: '/custom/path',
+    binaryPath: '/path/binary',
+    modelPath: '/path/model',
+    ffmpegPath: '/path/ffmpeg'
 );
 
 $whisper = new Whisper($config);
@@ -135,8 +136,8 @@ php ./vendor/bin/whisper-setup --model=large
 
 ### Performance Tips
 
-1. **Start with `base.en`** - It's the sweet spot for most applications (ends with ".en")
-2. **Use English-only models** when possible - They're faster and more accurate for English
+1. **Start with `base.en`** - It's the sweet spot for most applications
+2. **Use English-only models** when possible - They're faster and more accurate for English (ends with ".en")
 3. **Upgrade to `small`** if you need better accuracy
 4. **Use `medium` or `large`** only when accuracy is critical (they're much slower)
 5. **Use `tiny`** for real-time applications or testing
