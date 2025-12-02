@@ -68,7 +68,7 @@ See [Available Models](#available-models): `tiny`, `tiny.en`, `base`, `base.en`,
 ### Check Installation Status
 
 ```bash
-vendor/bin/whisper-status
+php ./vendor/bin/whisper-status
 ```
 
 This will show:
@@ -125,17 +125,17 @@ $whisper = new Whisper($config);
 
 ```bash
 # Install default model (base.en)
-vendor/bin/whisper-setup
+php ./vendor/bin/whisper-setup
 
 # Install specific model
-vendor/bin/whisper-setup --model=small.en
-vendor/bin/whisper-setup --model=medium
-vendor/bin/whisper-setup --model=large
+php ./vendor/bin/whisper-setup --model=small.en
+php ./vendor/bin/whisper-setup --model=medium
+php ./vendor/bin/whisper-setup --model=large
 ```
 
 ### Performance Tips
 
-1. **Start with `base.en`** - It's the sweet spot for most applications
+1. **Start with `base.en`** - It's the sweet spot for most applications (ends with ".en")
 2. **Use English-only models** when possible - They're faster and more accurate for English
 3. **Upgrade to `small`** if you need better accuracy
 4. **Use `medium` or `large`** only when accuracy is critical (they're much slower)
