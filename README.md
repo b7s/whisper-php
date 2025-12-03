@@ -24,6 +24,14 @@ A powerful, standalone PHP library that brings state-of-the-art speech recogniti
 
 ---
 
+```php
+echo (new Whisper)
+    ->audio('/path/to/audio.mp3')
+    ->toText();
+``` 
+
+---
+
 ## Requirements
 
 - PHP 8.2 or higher
