@@ -447,7 +447,7 @@ $result = $whisper
     ->run();
 
 echo $result->detectedLanguage();  // Auto‑detects language
-print_r(echo $result->segments()); // Array: text, timestamps, speakers
+print_r($result->segments()); // Array: text, timestamps, speakers
 
 echo $result->toText(); // Pure text
 echo $result->toJson(); // or: toJson(true), toCsv, toVtt, toSrt
