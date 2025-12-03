@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/laravel-whisper-logo-mini.webp?_=2" width="340px" alt="[Laravel Whisper]">
+<img src="docs/laravel-whisper-logo-mini.webp?_=3" width="340px" alt="[Laravel Whisper]">
 
 
 # Laravel Whisper
