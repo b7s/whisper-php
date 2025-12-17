@@ -181,7 +181,8 @@ $config = new Config(
     dataDir: '/custom/path',
     binaryPath: '/path/binary',
     modelPath: '/path/model',
-    ffmpegPath: '/path/ffmpeg'
+    ffmpegPath: '/path/ffmpeg',
+    chunkSize: 10 * 1024 * 1024, // 10 MB
 );
 
 $whisper = new Whisper($config);
@@ -459,10 +460,12 @@ $text = $whisper->audio('/path/to/long-audio.mp3')
 
 ```php
 // Transcribe video files directly
-$text = $whisper->video('/path/to/video.mp4')->toText();
+$text = $whisper->video('/path/to/video.mp4')
+    ->toText();
 
 // Or use audio() - it auto-detects video files
-$text = $whisper->audio('/path/to/video.mp4')->toText();
+$text = $whisper->audio('/path/to/video.mp4')
+    ->toText();
 
 // Generate subtitles from video
 $whisper->video('/path/to/movie.mp4')
