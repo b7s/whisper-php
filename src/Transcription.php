@@ -72,6 +72,18 @@ final class Transcription
     }
 
     /**
+     * Enable chunking for large audio/video files.
+     * Automatically enabled for video files.
+     *
+     * @param int|null $sizeInBytes Chunk size in bytes (default: 20MB from Config)
+     */
+    public function chunk(?int $sizeInBytes = null): self
+    {
+        $this->options->chunk($sizeInBytes);
+        return $this;
+    }
+
+    /**
      * @param \Closure(int): void $callback
      */
     public function onProgress(\Closure $callback): self

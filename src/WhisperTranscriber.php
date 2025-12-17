@@ -9,11 +9,27 @@ use Symfony\Component\Process\Process;
 
 final class WhisperTranscriber
 {
+    /** @var array<string> Video extensions supported by ffmpeg */
+    private const VIDEO_EXTENSIONS = [
+        'mp4', 'mkv', 'avi', 'mov', 'wmv', 'flv', 'webm', 'm4v',
+        'mpeg', 'mpg', '3gp', '3g2', 'ogv', 'ts', 'mts', 'm2ts',
+    ];
+
+    private int $defaultChunkSize;
+
     public function __construct(
         private readonly WhisperPlatformDetector $platform,
         private readonly WhisperPathResolver $paths,
         private readonly Logger $logger,
-    ) {}
+        ?int $defaultChunkSize = null,
+    ) {
+        $this->defaultChunkSize = $defaultChunkSize ?? Config::DEFAULT_CHUNK_SIZE;
+    }
+
+    public function setDefaultChunkSize(int $size): void
+    {
+        $this->defaultChunkSize = $size;
+    }
 
     /**
      * @return ($withTimestamps is true ? array<int, array{start: string, end: string, text: string}> : string)
@@ -48,6 +64,13 @@ final class WhisperTranscriber
             return new TranscriptionResult('', []);
         }
 
+        $isVideo = $this->isVideoFile($audioPath);
+        $shouldChunk = $options->isChunkingEnabled() || $isVideo;
+
+        if ($shouldChunk) {
+            return $this->transcribeWithChunking($audioPath, $options, $isVideo);
+        }
+
         $tempWavPath = $this->convertFileToWav($audioPath);
 
         try {
@@ -55,6 +78,294 @@ final class WhisperTranscriber
         } finally {
             @unlink($tempWavPath);
         }
+    }
+
+    /**
+     * Check if the file is a video based on extension.
+     */
+    public function isVideoFile(string $filePath): bool
+    {
+        $extension = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+        return \in_array($extension, self::VIDEO_EXTENSIONS, true);
+    }
+
+    /**
+     * Transcribe with chunking support for large files.
+     *
+     * @throws WhisperException
+     */
+    private function transcribeWithChunking(string $inputPath, TranscriptionOptions $options, bool $isVideo): TranscriptionResult
+    {
+        $chunkSize = $options->getChunkSize() ?? $this->defaultChunkSize;
+
+        // Extract audio if video
+        if ($isVideo) {
+            $this->logger->info('Extracting audio from video file', ['path' => $inputPath]);
+            $audioPath = $this->extractAudioFromVideo($inputPath);
+        } else {
+            $audioPath = $inputPath;
+        }
+
+        try {
+            $fileSize = filesize($audioPath);
+            
+            // If file is smaller than chunk size, process normally
+            if ($fileSize !== false && $fileSize <= $chunkSize) {
+                $this->logger->info('File size within chunk limit, processing without splitting', [
+                    'size' => $fileSize,
+                    'chunk_size' => $chunkSize,
+                ]);
+                $tempWavPath = $this->convertFileToWav($audioPath);
+                try {
+                    return $this->runWhisper($tempWavPath, $options);
+                } finally {
+                    @unlink($tempWavPath);
+                }
+            }
+
+            return $this->processInChunks($audioPath, $options, $chunkSize);
+        } finally {
+            if ($isVideo && isset($audioPath) && $audioPath !== $inputPath) {
+                @unlink($audioPath);
+            }
+        }
+    }
+
+    /**
+     * Extract audio track from video file.
+     *
+     * @throws WhisperException
+     */
+    private function extractAudioFromVideo(string $videoPath): string
+    {
+        $tempAudioPath = $this->paths->getTempPath('video_audio_extract_') . '.mp3';
+        $ffmpegPath = $this->paths->getFfmpegPath();
+
+        $process = new Process([
+            $ffmpegPath,
+            '-i', $videoPath,
+            '-vn',              // No video
+            '-acodec', 'libmp3lame',
+            '-ab', '128k',
+            '-ar', '16000',
+            '-ac', '1',
+            '-y',
+            $tempAudioPath,
+        ]);
+        $process->setTimeout(600);
+        $process->run();
+
+        if (! $process->isSuccessful()) {
+            $this->logger->error('Failed to extract audio from video', [
+                'error' => $process->getErrorOutput(),
+            ]);
+            throw new WhisperException('Failed to extract audio from video file');
+        }
+
+        return $tempAudioPath;
+    }
+
+    /**
+     * Process audio file in chunks.
+     *
+     * @throws WhisperException
+     */
+    private function processInChunks(string $audioPath, TranscriptionOptions $options, int $chunkSize): TranscriptionResult
+    {
+        $duration = $this->getAudioDuration($audioPath);
+        if ($duration === null) {
+            throw new WhisperException('Could not determine audio duration for chunking');
+        }
+
+        $fileSize = filesize($audioPath);
+        if ($fileSize === false) {
+            throw new WhisperException('Could not determine file size');
+        }
+
+        // Calculate chunk duration based on file size ratio
+        $bytesPerSecond = $fileSize / $duration;
+        $chunkDuration = (int) floor($chunkSize / $bytesPerSecond);
+        $chunkDuration = max(30, min($chunkDuration, 600)); // Between 30s and 10min
+
+        $this->logger->info('Processing audio in chunks', [
+            'total_duration' => $duration,
+            'chunk_duration' => $chunkDuration,
+            'file_size' => $fileSize,
+            'chunk_size' => $chunkSize,
+        ]);
+
+        $allSegments = [];
+        $allText = [];
+        $detectedLanguage = null;
+        $currentOffset = 0.0;
+        $chunkIndex = 0;
+
+        while ($currentOffset < $duration) {
+            $chunkPath = $this->extractChunk($audioPath, $currentOffset, $chunkDuration, $chunkIndex);
+
+            try {
+                $tempWavPath = $this->convertFileToWav($chunkPath);
+
+                try {
+                    $result = $this->runWhisper($tempWavPath, $options);
+
+                    if ($detectedLanguage === null) {
+                        $detectedLanguage = $result->detectedLanguage();
+                    }
+
+                    $allText[] = $result->toText();
+
+                    // Adjust segment timestamps with offset
+                    foreach ($result->segments() as $segment) {
+                        $allSegments[] = [
+                            'start' => $this->addTimeOffset($segment['start'], $currentOffset),
+                            'end' => $this->addTimeOffset($segment['end'], $currentOffset),
+                            'text' => $segment['text'],
+                            'speaker' => $segment['speaker'] ?? null,
+                        ];
+                    }
+                } finally {
+                    @unlink($tempWavPath);
+                }
+            } finally {
+                @unlink($chunkPath);
+            }
+
+            $currentOffset += $chunkDuration;
+            $chunkIndex++;
+        }
+
+        // Remove null speaker entries if not detecting speakers
+        $allSegments = array_map(function ($segment) {
+            if ($segment['speaker'] === null) {
+                unset($segment['speaker']);
+            }
+            return $segment;
+        }, $allSegments);
+
+        return new TranscriptionResult(
+            implode(' ', $allText),
+            $allSegments,
+            $detectedLanguage
+        );
+    }
+
+    /**
+     * Get audio duration in seconds using ffprobe.
+     */
+    private function getAudioDuration(string $audioPath): ?float
+    {
+        $ffmpegPath = $this->paths->getFfmpegPath();
+        $ffprobePath = str_replace('ffmpeg', 'ffprobe', $ffmpegPath);
+
+        // Try ffprobe first
+        if (file_exists($ffprobePath) || $this->commandExists('ffprobe')) {
+            $probePath = file_exists($ffprobePath) ? $ffprobePath : 'ffprobe';
+            $process = new Process([
+                $probePath,
+                '-v', 'error',
+                '-show_entries', 'format=duration',
+                '-of', 'default=noprint_wrappers=1:nokey=1',
+                $audioPath,
+            ]);
+            $process->run();
+
+            if ($process->isSuccessful()) {
+                $duration = trim($process->getOutput());
+                if (is_numeric($duration)) {
+                    return (float) $duration;
+                }
+            }
+        }
+
+        // Fallback: use ffmpeg to get duration
+        $process = new Process([
+            $ffmpegPath,
+            '-i', $audioPath,
+            '-f', 'null',
+            '-',
+        ]);
+        $process->run();
+
+        $output = $process->getErrorOutput();
+        if (preg_match('/Duration:\s*(\d{2}):(\d{2}):(\d{2})\.(\d+)/', $output, $matches)) {
+            return (int) $matches[1] * 3600 + (int) $matches[2] * 60 + (int) $matches[3] + (int) $matches[4] / 100;
+        }
+
+        return null;
+    }
+
+    /**
+     * Check if a command exists in PATH.
+     */
+    private function commandExists(string $command): bool
+    {
+        $which = $this->platform->isWindows() ? 'where' : 'which';
+        $process = new Process([$which, $command]);
+        $process->run();
+        return $process->isSuccessful();
+    }
+
+    /**
+     * Extract a chunk from audio file.
+     *
+     * @throws WhisperException
+     */
+    private function extractChunk(string $audioPath, float $startTime, int $duration, int $chunkIndex): string
+    {
+        $chunkPath = $this->paths->getTempPath("audio_chunk_{$chunkIndex}_") . '.mp3';
+        $ffmpegPath = $this->paths->getFfmpegPath();
+
+        $process = new Process([
+            $ffmpegPath,
+            '-i', $audioPath,
+            '-ss', (string) $startTime,
+            '-t', (string) $duration,
+            '-acodec', 'libmp3lame',
+            '-ab', '128k',
+            '-y',
+            $chunkPath,
+        ]);
+        $process->setTimeout(150);
+        $process->run();
+
+        if (! $process->isSuccessful()) {
+            $this->logger->error('Failed to extract audio chunk', [
+                'chunk' => $chunkIndex,
+                'start' => $startTime,
+                'error' => $process->getErrorOutput(),
+            ]);
+            throw new WhisperException("Failed to extract audio chunk {$chunkIndex}");
+        }
+
+        return $chunkPath;
+    }
+
+    /**
+     * Add time offset to timestamp string.
+     */
+    private function addTimeOffset(string $timestamp, float $offsetSeconds): string
+    {
+        // Parse timestamp format: HH:MM:SS.mmm
+        if (preg_match('/(\d{2}):(\d{2}):(\d{2})\.(\d{3})/', $timestamp, $matches)) {
+            $totalMs = (int) $matches[1] * 3600000 +
+                       (int) $matches[2] * 60000 +
+                       (int) $matches[3] * 1000 +
+                       (int) $matches[4];
+
+            $totalMs += (int) ($offsetSeconds * 1000);
+
+            $hours = (int) floor($totalMs / 3600000);
+            $totalMs %= 3600000;
+            $minutes = (int) floor($totalMs / 60000);
+            $totalMs %= 60000;
+            $seconds = (int) floor($totalMs / 1000);
+            $ms = $totalMs % 1000;
+
+            return \sprintf('%02d:%02d:%02d.%03d', $hours, $minutes, $seconds, $ms);
+        }
+
+        return $timestamp;
     }
 
     public function isAvailable(): bool
@@ -92,6 +403,9 @@ final class WhisperTranscriber
     }
 
     /**
+     * Convert audio file to WAV format optimized for Whisper.
+     * Uses optimized settings: 16kHz sample rate, mono channel, 16-bit PCM.
+     *
      * @throws WhisperException
      */
     private function convertFileToWav(string $inputPath): string
@@ -99,15 +413,24 @@ final class WhisperTranscriber
         $tempWavPath = $this->paths->getTempPath('audio_laravel_whisper_wav_') . '.wav';
         $ffmpegPath = $this->paths->getFfmpegPath();
 
-        $process = new Process([
+        $args = [
             $ffmpegPath,
             '-i', $inputPath,
-            '-ar', '16000',
-            '-ac', '1',
-            '-c:a', 'pcm_s16le',
-            '-y',
-            $tempWavPath,
-        ]);
+            '-ar', '16000',      // 16kHz sample rate (Whisper requirement)
+            '-ac', '1',          // Mono channel (reduces size by ~50%)
+            '-c:a', 'pcm_s16le', // 16-bit PCM (lossless, Whisper native format)
+        ];
+
+        // Add audio normalization for better transcription quality
+        // This helps with quiet or inconsistent audio levels
+        $args[] = '-af';
+        $args[] = 'loudnorm=I=-16:TP=-1.5:LRA=11';
+
+        $args[] = '-y';
+        $args[] = $tempWavPath;
+
+        $process = new Process($args);
+        $process->setTimeout(300);
         $process->run();
 
         if (! $process->isSuccessful()) {

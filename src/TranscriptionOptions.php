@@ -19,6 +19,8 @@ final class TranscriptionOptions
     private bool $detectSpeakerChanges = false;
     /** @var (\Closure(int): void)|null */
     private ?\Closure $progressCallback = null;
+    private bool $enableChunking = false;
+    private ?int $chunkSize = null;
 
     public function withTimestamps(bool $enabled = true): self
     {
@@ -35,7 +37,7 @@ final class TranscriptionOptions
     public function outputFormat(string $format): self
     {
         $validFormats = ['srt', 'vtt', 'json', 'csv', 'txt'];
-        if (!in_array($format, $validFormats, true)) {
+        if (!\in_array($format, $validFormats, true)) {
             throw new \InvalidArgumentException("Invalid format. Must be one of: " . implode(', ', $validFormats));
         }
         $this->outputFormat = $format;
@@ -150,5 +152,27 @@ final class TranscriptionOptions
     public function getProgressCallback(): ?\Closure
     {
         return $this->progressCallback;
+    }
+
+    /**
+     * Enable chunking for large files.
+     *
+     * @param int|null $sizeInBytes Chunk size in bytes (default: 20MB from Config)
+     */
+    public function chunk(?int $sizeInBytes = null): self
+    {
+        $this->enableChunking = true;
+        $this->chunkSize = $sizeInBytes;
+        return $this;
+    }
+
+    public function isChunkingEnabled(): bool
+    {
+        return $this->enableChunking;
+    }
+
+    public function getChunkSize(): ?int
+    {
+        return $this->chunkSize;
     }
 }

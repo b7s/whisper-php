@@ -20,6 +20,8 @@ A powerful, standalone PHP library that brings state-of-the-art speech recogniti
 - 📝 Export to SRT, VTT, JSON, CSV
 - 🔄 Real-time progress tracking
 - 🎨 Fluent Laravel-style API
+- 🎬 Video support with automatic audio extraction
+- 📦 Smart chunking for large audio/video files
 - 🔒 Privacy-first (all processing happens locally)
 - 🧪 Real tests ([see here](examples/example-models.php))
 
@@ -85,7 +87,7 @@ This will show:
 - Binary installation status
 - Model installation status
 - FFmpeg availability
-- GPU support detection
+- GPU support detection (fallback to CPU)
 
 ## Basic Usage
 
@@ -451,6 +453,82 @@ $text = $whisper->audio('/path/to/long-audio.mp3')
 - Logging progress for long-running tasks
 - Providing user feedback during processing
 
+### Video Support
+
+**What it does:** Automatically extracts audio from video files using FFmpeg before transcription. Supports all common video formats (MP4, MKV, AVI, MOV, WebM, etc.).
+
+```php
+// Transcribe video files directly
+$text = $whisper->video('/path/to/video.mp4')->toText();
+
+// Or use audio() - it auto-detects video files
+$text = $whisper->audio('/path/to/video.mp4')->toText();
+
+// Generate subtitles from video
+$whisper->video('/path/to/movie.mp4')
+    ->detectSpeakers()
+    ->saveTo('subtitles.srt');
+
+// Check if a file is a video
+if ($whisper->isVideoFile('/path/to/file.mp4')) {
+    echo "This is a video file";
+}
+```
+
+**Supported formats:**
+- MP4, MKV, AVI, MOV, WMV, FLV, WebM, M4V
+- MPEG, MPG, 3GP, 3G2, OGV, TS, MTS, M2TS
+
+**Use cases:**
+- Creating subtitles for videos
+- Transcribing video conferences
+- Processing YouTube downloads
+- Extracting dialogue from movies
+- Analyzing video content
+
+### Chunking for Large Files
+
+**What it does:** Automatically splits large audio/video files into smaller chunks for processing. This prevents memory issues and enables processing of very long recordings. Timestamps are automatically adjusted to maintain accuracy across chunks.
+
+```php
+// Enable chunking for large files (default: 20MB chunks)
+$text = $whisper->audio('/path/to/large-podcast.mp3')
+    ->chunk()
+    ->toText();
+
+// Custom chunk size (e.g., 10MB)
+$text = $whisper->audio('/path/to/huge-file.mp3')
+    ->chunk(10 * 1024 * 1024)
+    ->toText();
+
+// Chunking is automatically enabled for video files
+$text = $whisper->video('/path/to/long-video.mp4')->toText();
+
+// Configure default chunk size globally
+$config = new Config(chunkSize: 30 * 1024 * 1024); // 30MB
+$whisper = new Whisper($config);
+```
+
+**When to use:**
+- Audio/video files larger than 20MB
+- Long recordings (>30 minutes)
+- Processing on memory-constrained systems
+- Video files (automatically enabled)
+
+**How it works:**
+1. Calculates optimal chunk duration based on file size
+2. Splits audio into overlapping segments
+3. Transcribes each chunk independently
+4. Merges results with adjusted timestamps
+5. Returns seamless transcription
+
+**Use cases:**
+- Multi-hour podcasts or lectures
+- Full-length movies or documentaries
+- All-day conference recordings
+- Large video files
+- Batch processing of media libraries
+
 ## Available Models
 
 laravelwhisper supports all Whisper model sizes. Choose based on your accuracy needs and available resources.
@@ -526,11 +604,17 @@ print_r($whisper->getAvailableModels()); // ['base', 'small', 'large']
 
 ```php
 // Generate accurate subtitles with speaker identification
-$whisper->audio('/path/to/interview.mp4')
+$whisper->video('/path/to/interview.mp4')
     ->improveDecode(5)           // High quality
     ->filterNonSpeech(0.5)       // Remove silence
     ->detectSpeakers()           // Identify who's talking
     ->saveTo('subtitles.srt');
+
+// Process large video file with custom chunk size
+$whisper->video('/path/to/long-movie.mp4')
+    ->chunk(50 * 1024 * 1024)    // 50MB chunks
+    ->fromLanguage('en')
+    ->saveTo('movie-subtitles.srt');
 ```
 
 ### Example 3: Transcribing Medical Consultation
@@ -596,11 +680,14 @@ foreach ($segments as $segment) {
 $files = [
     ['path' => 'meeting1.mp3', 'type' => 'meeting'],
     ['path' => 'lecture.mp3', 'type' => 'lecture'],
-    ['path' => 'interview.mp3', 'type' => 'interview'],
+    ['path' => 'interview.mp4', 'type' => 'video'],
 ];
 
 foreach ($files as $file) {
-    $transcription = $whisper->audio($file['path']);
+    // Auto-detect video files
+    $transcription = $whisper->isVideoFile($file['path'])
+        ? $whisper->video($file['path'])
+        : $whisper->audio($file['path']);
     
     // Apply settings based on type
     match($file['type']) {
@@ -610,12 +697,14 @@ foreach ($files as $file) {
         'lecture' => $transcription
             ->improveDecode(5)
             ->filterNonSpeech(0.6),
-        'interview' => $transcription
+        'video' => $transcription
+            ->chunk()  // Enable chunking for large videos
             ->detectSpeakers()
             ->improveDecode(5),
     };
     
-    $transcription->saveTo(str_replace('.mp3', '.srt', $file['path']));
+    $outputPath = preg_replace('/\.(mp3|mp4|mkv|avi)$/', '.srt', $file['path']);
+    $transcription->saveTo($outputPath);
 }
 ```
 

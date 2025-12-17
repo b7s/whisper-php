@@ -23,7 +23,7 @@ final class Whisper
         $this->platform = new WhisperPlatformDetector();
         $this->paths = new WhisperPathResolver($this->platform, $this->config);
         $this->downloader = new WhisperDownloader($this->platform, $this->paths, $this->logger);
-        $this->transcriber = new WhisperTranscriber($this->platform, $this->paths, $this->logger);
+        $this->transcriber = new WhisperTranscriber($this->platform, $this->paths, $this->logger, $this->config->chunkSize);
     }
 
     /**
@@ -32,6 +32,23 @@ final class Whisper
     public function audio(string $audioPath): Transcription
     {
         return (new Transcription($this->transcriber))->file($audioPath);
+    }
+
+    /**
+     * Start a fluent transcription builder for video files.
+     * Automatically extracts audio and enables chunking.
+     */
+    public function video(string $videoPath): Transcription
+    {
+        return (new Transcription($this->transcriber))->file($videoPath)->chunk();
+    }
+
+    /**
+     * Check if a file is a video based on extension.
+     */
+    public function isVideoFile(string $filePath): bool
+    {
+        return $this->transcriber->isVideoFile($filePath);
     }
 
     /**
@@ -145,11 +162,12 @@ final class Whisper
             ffmpegPath: $this->config->ffmpegPath,
             model: $model,
             language: $this->config->language,
+            chunkSize: $this->config->chunkSize,
         );
 
         // Recreate paths and transcriber with new config
         $this->paths = new WhisperPathResolver($this->platform, $this->config);
-        $this->transcriber = new WhisperTranscriber($this->platform, $this->paths, $this->logger);
+        $this->transcriber = new WhisperTranscriber($this->platform, $this->paths, $this->logger, $this->config->chunkSize);
 
         // Download model if not available
         if (!file_exists($this->paths->getModelPath())) {
