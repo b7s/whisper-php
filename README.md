@@ -1,9 +1,9 @@
 <div align="center">
 
-<img src="docs/laravel-whisper-logo-350.webp" width="340px" alt="[Laravel Whisper]">
+<img src="docs/whisper-php-logo.webp" width="340px" alt="[Whisper PHP logo]">
 
 
-# Laravel Whisper
+# Whisper for PHP
 
 🎙️ **Transform audio into text with Whisper.cpp AI - directly in PHP!**
 
