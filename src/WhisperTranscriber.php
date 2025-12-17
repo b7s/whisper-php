@@ -67,6 +67,11 @@ final class WhisperTranscriber
         $isVideo = $this->isVideoFile($audioPath);
         $shouldChunk = $options->isChunkingEnabled() || $isVideo;
 
+        // Set default timeout for videos if not explicitly set by user
+        if ($isVideo && !$options->isTimeoutExplicitlySet()) {
+            $options->timeout(1200); // 20 minutes for videos
+        }
+
         if ($shouldChunk) {
             return $this->transcribeWithChunking($audioPath, $options, $isVideo);
         }
@@ -101,7 +106,8 @@ final class WhisperTranscriber
         // Extract audio if video
         if ($isVideo) {
             $this->logger->info('Extracting audio from video file', ['path' => $inputPath]);
-            $audioPath = $this->extractAudioFromVideo($inputPath);
+            $timeout = $options->isTimeoutExplicitlySet() ? $options->getTimeout() : 1200;
+            $audioPath = $this->extractAudioFromVideo($inputPath, $timeout);
         } else {
             $audioPath = $inputPath;
         }
@@ -115,7 +121,8 @@ final class WhisperTranscriber
                     'size' => $fileSize,
                     'chunk_size' => $chunkSize,
                 ]);
-                $tempWavPath = $this->convertFileToWav($audioPath);
+                $timeout = $options->isTimeoutExplicitlySet() ? $options->getTimeout() : 600;
+                $tempWavPath = $this->convertFileToWav($audioPath, $timeout);
                 try {
                     return $this->runWhisper($tempWavPath, $options);
                 } finally {
@@ -136,7 +143,7 @@ final class WhisperTranscriber
      *
      * @throws WhisperException
      */
-    private function extractAudioFromVideo(string $videoPath): string
+    private function extractAudioFromVideo(string $videoPath, ?int $timeout = 1200): string
     {
         $tempAudioPath = $this->paths->getTempPath('video_audio_extract_') . '.mp3';
         $ffmpegPath = $this->paths->getFfmpegPath();
@@ -152,7 +159,7 @@ final class WhisperTranscriber
             '-y',
             $tempAudioPath,
         ]);
-        $process->setTimeout(600);
+        $process->setTimeout($timeout);
         $process->run();
 
         if (! $process->isSuccessful()) {
@@ -201,10 +208,12 @@ final class WhisperTranscriber
         $chunkIndex = 0;
 
         while ($currentOffset < $duration) {
-            $chunkPath = $this->extractChunk($audioPath, $currentOffset, $chunkDuration, $chunkIndex);
+            $timeout = $options->isTimeoutExplicitlySet() ? $options->getTimeout() : 600;
+            $chunkPath = $this->extractChunk($audioPath, $currentOffset, $chunkDuration, $chunkIndex, $timeout);
 
             try {
-                $tempWavPath = $this->convertFileToWav($chunkPath);
+                $timeout = $options->isTimeoutExplicitlySet() ? $options->getTimeout() : 600;
+                $tempWavPath = $this->convertFileToWav($chunkPath, $timeout);
 
                 try {
                     $result = $this->runWhisper($tempWavPath, $options);
@@ -311,7 +320,7 @@ final class WhisperTranscriber
      *
      * @throws WhisperException
      */
-    private function extractChunk(string $audioPath, float $startTime, int $duration, int $chunkIndex): string
+    private function extractChunk(string $audioPath, float $startTime, int $duration, int $chunkIndex, ?int $timeout = 300): string
     {
         $chunkPath = $this->paths->getTempPath("audio_chunk_{$chunkIndex}_") . '.mp3';
         $ffmpegPath = $this->paths->getFfmpegPath();
@@ -326,7 +335,7 @@ final class WhisperTranscriber
             '-y',
             $chunkPath,
         ]);
-        $process->setTimeout(150);
+        $process->setTimeout($timeout);
         $process->run();
 
         if (! $process->isSuccessful()) {
@@ -408,7 +417,7 @@ final class WhisperTranscriber
      *
      * @throws WhisperException
      */
-    private function convertFileToWav(string $inputPath): string
+    private function convertFileToWav(string $inputPath, ?int $timeout = 600): string
     {
         $tempWavPath = $this->paths->getTempPath('audio_laravel_whisper_wav_') . '.wav';
         $ffmpegPath = $this->paths->getFfmpegPath();
@@ -430,7 +439,7 @@ final class WhisperTranscriber
         $args[] = $tempWavPath;
 
         $process = new Process($args);
-        $process->setTimeout(300);
+        $process->setTimeout($timeout);
         $process->run();
 
         if (! $process->isSuccessful()) {
@@ -468,17 +477,27 @@ final class WhisperTranscriber
 
         $args = $this->buildWhisperArgs($binaryPath, $modelPath, $wavPath, $options);
 
+        // Get timeout from options
+        // If explicitly set (even to null), use that value
+        // Otherwise use default (300s = 5 minutes)
+        if ($options->isTimeoutExplicitlySet()) {
+            $timeout = $options->getTimeout(); // Can be null for unlimited
+        } else {
+            $timeout = 300; // Default 5 minutes
+        }
+
         $this->logger->info('Running Whisper transcription', [
             'binary' => $binaryPath,
             'model' => $modelPath,
             'audio' => $wavPath,
             'gpu' => $this->platform->hasGpuSupport(),
+            'timeout' => $timeout === null ? 'unlimited' : "{$timeout}s",
             'options' => $this->getOptionsForLog($options),
         ]);
 
         $env = $this->getWhisperEnvironment();
         $process = new Process($args);
-        $process->setTimeout(300);
+        $process->setTimeout($timeout);
         foreach ($env as $key => $value) {
             $process->setEnv([$key => $value]);
         }
@@ -498,7 +517,7 @@ final class WhisperTranscriber
             $this->logger->info('GPU transcription failed, falling back to CPU');
             $args[] = '-ng'; // Force CPU mode
             $process = new Process($args);
-            $process->setTimeout(300);
+            $process->setTimeout($timeout);
             foreach ($env as $key => $value) {
                 $process->setEnv([$key => $value]);
             }

@@ -1,5 +1,7 @@
 <?php
 
+// run this file with: php examples/example-models.php
+
 declare(strict_types=1);
 
 require __DIR__ . '/../vendor/autoload.php';
@@ -78,7 +80,7 @@ if (!$whisper->hasModel('medium')) {
 echo "Available models: " . implode(', ', $whisper->getAvailableModels()) . "\n";
 
 /*
-echo "=== Example 7: Extract audio from Video and transcript ===\n";
+echo "=== Example 7: Extract audio from Video to transcript ===\n";
 
 // Nice CLI with progress bar
 // Disables output buffering to display in real time
@@ -86,7 +88,7 @@ if (ob_get_level()) {
     ob_end_flush();
 }
 
-echo "\n🎬 Processing video...\n";
+echo "\n🎬 Transcribing the video...\n";
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
 
 $startTime = microtime(true);
@@ -96,9 +98,10 @@ $result = $whisper
     ->useModel('medium')
     ->video(__DIR__ . '/path-to-video/my-video.mp4')
     ->chunk(100 * 1024 * 1024)
+    ->timeout(null)  // Unlimited timeout for this large video
     ->fromLanguage('pt')
-    ->onProgress(function ($progress) use (&$lastProgress) {
-        // Avoid redesigning if progress hasn't changed.
+    ->onProgress(function (int $progress) use (&$lastProgress) {
+        // Avoid redrawing if progress hasn't changed
         if ($progress === $lastProgress) {
             return;
         }
@@ -113,7 +116,7 @@ $result = $whisper
         $bar = str_repeat('█', $completed) . str_repeat('░', $remaining);
 
         // Clear the line and draw the bar.
-        fwrite(STDOUT, "\r📊 Progresso: [{$bar}] {$progress}%");
+        fwrite(STDOUT, "\r📊 Progress: [{$bar}] {$progress}%");
 
         // Force an immediate flush to display in real time.
         fflush(STDOUT);
@@ -132,11 +135,10 @@ $finalText = $result->toText();
 echo "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
 echo "✅ Transcription completed in {$duration}s\n";
 echo "🌍 Language detected: " . ($result->detectedLanguage() ?? '(unknow)') . "\n";
-echo "📝 Text extracted:\n";
-echo mb_substr($finalText, 0, 4, 'UTF-8') . "\n\n";
+echo '📝 Text extracted: ' . mb_substr($finalText, 0, 40, 'UTF-8') . "...\n\n";
 
 // save file
-$outputFile = __DIR__ . '/transcript.txt';
+$outputFile = __DIR__ . '/video-transcript.txt';
 file_put_contents($outputFile, $finalText);
 echo "💾 Salvo em: {$outputFile}\n";
 */

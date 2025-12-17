@@ -21,6 +21,8 @@ final class TranscriptionOptions
     private ?\Closure $progressCallback = null;
     private bool $enableChunking = false;
     private ?int $chunkSize = null;
+    private ?int $timeout = null;
+    private bool $timeoutExplicitlySet = false;
 
     public function withTimestamps(bool $enabled = true): self
     {
@@ -174,5 +176,27 @@ final class TranscriptionOptions
     public function getChunkSize(): ?int
     {
         return $this->chunkSize;
+    }
+
+    /**
+     * Set timeout for transcription process.
+     *
+     * @param int|null $seconds Timeout in seconds (null = no timeout)
+     */
+    public function timeout(?int $seconds): self
+    {
+        $this->timeout = $seconds;
+        $this->timeoutExplicitlySet = true;
+        return $this;
+    }
+
+    public function getTimeout(): ?int
+    {
+        return $this->timeout;
+    }
+
+    public function isTimeoutExplicitlySet(): bool
+    {
+        return $this->timeoutExplicitlySet;
     }
 }

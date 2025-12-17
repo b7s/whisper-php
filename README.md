@@ -122,6 +122,7 @@ $result = $whisper
     ->filterNonSpeech(0.5)  // Detects speech vs silence/noise (0-1)
     ->detectSpeakers()      // Detects different speakers
     ->context('Add context and technical terms to improve accuracy')
+    ->timeout(600)          // Set timeout in seconds (null = unlimited)
     ->onProgress(fn($p) => echo "{$p}%\n") // Real-time progress
     ->run();
 
@@ -136,6 +137,8 @@ $result->saveTo('/path/to/output.srt'); // Save directly to file (auto detects f
 ## Switching Models
 
 You can easily switch between models at runtime. The model will be downloaded automatically if not available:
+
+> **Note:** If you experience errors like "not all tensors loaded from model file", your model file may be corrupted. Delete it from `~/.local/share/laravelwhisper/models/` and re-download using `php ./vendor/bin/whisper-setup --model=<model-name>`.
 
 ```php
 $whisper = new Whisper();
@@ -457,6 +460,56 @@ $text = $whisper->audio('/path/to/long-audio.mp3')
 - Logging progress for long-running tasks
 - Providing user feedback during processing
 
+### Timeout Configuration
+
+**What it does:** Controls how long the transcription process can run before timing out. Useful for long videos or when you need to prevent processes from hanging indefinitely.
+
+> **Important:** For large video files or long recordings, use `->timeout(null)` to disable the timeout completely. The default 20-minute timeout for videos may not be sufficient for files larger than 500MB or recordings longer than 30 minutes.
+
+```php
+// Set custom timeout (in seconds)
+$text = $whisper->audio('/path/to/audio.mp3')
+    ->timeout(600)  // 10 minutes
+    ->toText();
+
+// Disable timeout (unlimited processing time) - RECOMMENDED for large videos
+$text = $whisper->audio('/path/to/very-long-audio.mp3')
+    ->timeout(null)  // No timeout - unlimited
+    ->toText();
+
+// Video files automatically get 20 minutes timeout by default
+$text = $whisper->video('/path/to/video.mp4')
+    ->toText();  // 20 minutes timeout (auto-applied)
+
+// Override video timeout to unlimited (recommended for large videos)
+$text = $whisper->video('/path/to/long-video.mp4')
+    ->timeout(null)  // Unlimited - best for large files
+    ->toText();
+
+// Or set a custom timeout
+$text = $whisper->video('/path/to/video.mp4')
+    ->timeout(3600)  // 1 hour
+    ->toText();
+```
+
+**Default timeouts:**
+- Audio files: 5 minutes (300 seconds)
+- Video files: 20 minutes (1200 seconds)
+- FFmpeg operations: 10 minutes (600 seconds)
+
+**Use cases:**
+- Processing very long recordings (conferences, lectures)
+- Preventing hung processes in production
+- Adjusting for slower systems or large models
+- Queue job timeout management
+
+**Tips:**
+- **Use `timeout(null)` for large videos** - This is the recommended approach for videos over 20 minutes
+- Increase timeout for large models (`medium`, `large`) which process slower
+- Consider chunking for files that consistently timeout
+- The default 20-minute timeout for videos may not be enough for long recordings
+- Audio files default to 5 minutes, which is usually sufficient
+
 ### Video Support
 
 **What it does:** Automatically extracts audio from video files using FFmpeg before transcription. Supports all common video formats (MP4, MKV, AVI, MOV, WebM, etc.).
@@ -616,9 +669,10 @@ $whisper->video('/path/to/interview.mp4')
     ->detectSpeakers()           // Identify who's talking
     ->saveTo('subtitles.srt');
 
-// Process large video file with custom chunk size
+// Process large video file with unlimited timeout (recommended)
 $whisper->video('/path/to/long-movie.mp4')
     ->chunk(50 * 1024 * 1024)    // 50MB chunks
+    ->timeout(null)              // Unlimited timeout - best for large files
     ->fromLanguage('en')
     ->saveTo('movie-subtitles.srt');
 ```
@@ -661,10 +715,11 @@ if ($language !== 'en') {
 ### Example 5: Processing Customer Support Calls
 
 ```php
-// Transcribe with progress tracking
+// Transcribe with progress tracking and custom timeout
 $segments = $whisper->audio('/path/to/support-call.mp3')
     ->detectSpeakers()
     ->filterNonSpeech(0.5)
+    ->timeout(900)  // 15 minutes for long calls
     ->context('Company: Acme Corp. Agents: John, Sarah. Products: Pro Plan, Enterprise')
     ->onProgress(function($percent) {
         // Update database or send websocket update
