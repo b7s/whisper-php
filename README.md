@@ -195,6 +195,7 @@ $whisper = new Whisper($config);
 - `binaryPath`: Custom path to Whisper binary (optional)
 - `modelPath`: Custom path to model file (optional)
 - `ffmpegPath`: Custom path to FFmpeg binary (optional)
+- `chunkSize`: Chunk size for large audio files (default: 20 MB)
 
 
 ### Model Installation
