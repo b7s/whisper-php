@@ -11,9 +11,11 @@ $whisper = new Whisper();
 
 // Check status
 $status = $whisper->getStatus();
+echo "Whisper Bin: {$status['binary_path']}\n";
 echo "Current model: {$status['current_model']}\n";
 echo "Available models: " . implode(', ', $status['available_models']) . "\n";
 echo "GPU support: " . ($status['gpu'] ? 'Yes' : 'No') . "\n\n";
+
 
 // Example 1: Use default model
 echo "=== Example 1: Using default 'base' (default) model ===\n";
@@ -73,5 +75,68 @@ if (!$whisper->hasModel('medium')) {
     echo "Downloading 'medium' model...\n";
     $whisper->downloadModel('medium');
 }
-
 echo "Available models: " . implode(', ', $whisper->getAvailableModels()) . "\n";
+
+/*
+echo "=== Example 7: Extract audio from Video and transcript ===\n";
+
+// Nice CLI with progress bar
+// Disables output buffering to display in real time
+if (ob_get_level()) {
+    ob_end_flush();
+}
+
+echo "\n🎬 Processing video...\n";
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
+
+$startTime = microtime(true);
+$lastProgress = -1;
+
+$result = $whisper
+    ->useModel('medium')
+    ->video(__DIR__ . '/path-to-video/my-video.mp4')
+    ->chunk(100 * 1024 * 1024)
+    ->fromLanguage('pt')
+    ->onProgress(function ($progress) use (&$lastProgress) {
+        // Avoid redesigning if progress hasn't changed.
+        if ($progress === $lastProgress) {
+            return;
+        }
+        $lastProgress = $progress;
+
+        // Calculate the progress bar.
+        $barWidth = 50;
+        $completed = (int) round($barWidth * $progress / 100);
+        $remaining = $barWidth - $completed;
+
+        // Mount bar
+        $bar = str_repeat('█', $completed) . str_repeat('░', $remaining);
+
+        // Clear the line and draw the bar.
+        fwrite(STDOUT, "\r📊 Progresso: [{$bar}] {$progress}%");
+
+        // Force an immediate flush to display in real time.
+        fflush(STDOUT);
+
+        if ($progress === 100) {
+            fwrite(STDOUT, " ✓\n");
+            fflush(STDOUT);
+        }
+    })
+    ->run();
+
+$duration = round(microtime(true) - $startTime, 2);
+
+$finalText = $result->toText();
+
+echo "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+echo "✅ Transcription completed in {$duration}s\n";
+echo "🌍 Language detected: " . ($result->detectedLanguage() ?? '(unknow)') . "\n";
+echo "📝 Text extracted:\n";
+echo mb_substr($finalText, 0, 4, 'UTF-8') . "\n\n";
+
+// save file
+$outputFile = __DIR__ . '/transcript.txt';
+file_put_contents($outputFile, $finalText);
+echo "💾 Salvo em: {$outputFile}\n";
+*/

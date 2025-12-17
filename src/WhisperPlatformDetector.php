@@ -45,14 +45,107 @@ final class WhisperPlatformDetector
         return is_linux();
     }
 
+    /**
+     * Check if GPU support is available (GPU detected AND toolkit installed).
+     */
     public function hasGpuSupport(): bool
     {
-        return match ($this->getOS()) {
-            'darwin' => $this->hasMacGpu(),
-            'windows' => $this->hasWindowsGpu(),
-            'linux' => $this->hasLinuxGpu(),
-            default => false,
-        };
+        return $this->getAvailableGpuType() !== null;
+    }
+
+    /**
+     * Get the GPU type: 'cuda' (NVIDIA), 'rocm' (AMD), 'metal' (Apple), or null.
+     * Only returns a type if the GPU is detected (hardware present).
+     */
+    public function getGpuType(): ?string
+    {
+        $os = $this->getOS();
+
+        if ($os === 'darwin') {
+            return $this->hasMacGpu() ? 'metal' : null;
+        }
+
+        if ($this->hasNvidiaGpu()) {
+            return 'cuda';
+        }
+
+        if ($this->hasAmdGpu()) {
+            return 'rocm';
+        }
+
+        return null;
+    }
+
+    /**
+     * Get GPU type only if the required toolkit/compiler is available.
+     * Returns null if GPU is detected but toolkit is missing.
+     */
+    public function getAvailableGpuType(): ?string
+    {
+        $gpuType = $this->getGpuType();
+
+        if ($gpuType === 'cuda' && ! $this->hasCudaToolkit()) {
+            return null;
+        }
+
+        if ($gpuType === 'rocm' && ! $this->hasRocmToolkit()) {
+            return null;
+        }
+
+        return $gpuType;
+    }
+
+    public function hasCudaToolkit(): bool
+    {
+        $which = $this->isWindows() ? 'where' : 'which';
+        $process = new Process([$which, 'nvcc']);
+        $process->run();
+        return $process->isSuccessful();
+    }
+
+    public function hasRocmToolkit(): bool
+    {
+        $process = new Process(['which', 'hipcc']);
+        $process->run();
+        return $process->isSuccessful();
+    }
+
+    public function hasNvidiaGpu(): bool
+    {
+        $which = $this->isWindows() ? 'where' : 'which';
+        $process = new Process([$which, 'nvidia-smi']);
+        $process->run();
+
+        if ($process->isSuccessful()) {
+            $nvidiaCheck = new Process(['nvidia-smi', '-L']);
+            $nvidiaCheck->run();
+            return $nvidiaCheck->isSuccessful();
+        }
+
+        return false;
+    }
+
+    public function hasAmdGpu(): bool
+    {
+        // Check for ROCm
+        $which = $this->isWindows() ? 'where' : 'which';
+        $process = new Process([$which, 'rocm-smi']);
+        $process->run();
+
+        if ($process->isSuccessful()) {
+            $amdCheck = new Process(['rocm-smi', '--showproductname']);
+            $amdCheck->run();
+            if ($amdCheck->isSuccessful()) {
+                return true;
+            }
+        }
+
+        // Fallback: Check for AMD GPU via /dev/kfd (Kernel Fusion Driver)
+        if (file_exists('/dev/kfd')) {
+            return true;
+        }
+
+        return false;
     }
 
     private function hasMacGpu(): bool
@@ -65,67 +158,23 @@ final class WhisperPlatformDetector
 
     private function hasWindowsGpu(): bool
     {
-        // Check for NVIDIA GPU
-        $process = new Process(['where', 'nvidia-smi']);
-        $process->run();
-
-        if ($process->isSuccessful()) {
-            $nvidiaCheck = new Process(['nvidia-smi', '-L']);
-            $nvidiaCheck->run();
-
-            if ($nvidiaCheck->isSuccessful()) {
-                return true;
-            }
-        }
-
-        // Check for AMD GPU via Windows Management Instrumentation
-        $wmiProcess = new Process([
-            'powershell',
-            '-Command',
-            'Get-WmiObject Win32_VideoController | Where-Object { $_.Name -like "*AMD*" -or $_.Name -like "*Radeon*" } | Select-Object -First 1'
-        ]);
-        $wmiProcess->run();
-
-        if ($wmiProcess->isSuccessful() && trim($wmiProcess->getOutput()) !== '') {
-            return true;
-        }
-
-        return false;
+        return $this->hasNvidiaGpu() || $this->hasAmdGpuWindows();
     }
 
     private function hasLinuxGpu(): bool
     {
-        // Check for NVIDIA GPU
-        $process = new Process(['which', 'nvidia-smi']);
-        $process->run();
+        return $this->hasNvidiaGpu() || $this->hasAmdGpu();
+    }
 
-        if ($process->isSuccessful()) {
-            $nvidiaCheck = new Process(['nvidia-smi', '-L']);
-            $nvidiaCheck->run();
+    private function hasAmdGpuWindows(): bool
+    {
+        $wmiProcess = new Process([
+            'powershell',
+            '-Command',
+            'Get-WmiObject Win32_VideoController | Where-Object { $_.Name -like "*AMD*" -or $_.Name -like "*Radeon*" } | Select-Object -First 1',
+        ]);
+        $wmiProcess->run();
 
-            if ($nvidiaCheck->isSuccessful()) {
-                return true;
-            }
-        }
-
-        // Check for AMD GPU (ROCm)
-        $rocmProcess = new Process(['which', 'rocm-smi']);
-        $rocmProcess->run();
-
-        if ($rocmProcess->isSuccessful()) {
-            $amdCheck = new Process(['rocm-smi', '--showproductname']);
-            $amdCheck->run();
-
-            if ($amdCheck->isSuccessful()) {
-                return true;
-            }
-        }
-
-        // Fallback: Check for AMD GPU via /dev/kfd (Kernel Fusion Driver)
-        if (file_exists('/dev/kfd')) {
-            return true;
-        }
-
-        return false;
+        return $wmiProcess->isSuccessful() && trim($wmiProcess->getOutput()) !== '';
     }
 }

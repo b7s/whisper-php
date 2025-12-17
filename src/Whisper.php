@@ -91,6 +91,7 @@ final class Whisper
         return [
             'binary' => file_exists($this->paths->getBinaryPath()),
             'model' => file_exists($this->paths->getModelPath()),
+            'binary_path' => $this->paths->getBinaryPath(),
             'current_model' => $this->getCurrentModel(),
             'available_models' => $this->getAvailableModels(),
             'ffmpeg' => $this->downloader->isFfmpegAvailable(),

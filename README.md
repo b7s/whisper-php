@@ -45,7 +45,7 @@ echo (new Whisper)
 ## Installation
 
 ```bash
-composer require b7s/laravelwhisper
+composer require b7s/whisper-php
 ```
 
 After installation, run the setup command to download Whisper binaries and models:
@@ -53,6 +53,8 @@ After installation, run the setup command to download Whisper binaries and model
 ```bash
 php ./vendor/bin/whisper-setup
 ```
+
+> Compile for GPU; if that fails, compile for CPU.
 
 This will download:
 - Whisper binary (~50-100 MB)

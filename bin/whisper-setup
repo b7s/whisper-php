@@ -164,8 +164,8 @@ try {
         echo "   \$text = \$whisper->audio('/path/to/audio.mp3')->toText();\n";
         echo "   echo \$text;\n";
         echo "\n";
-        echo "📖 Documentation: https://github.com/b7s/laravelwhisper\n";
-        echo "💡 Examples: See example.php in the package directory\n";
+        echo "📖 Documentation: https://github.com/b7s/whisper-php\n";
+        echo "💡 See examples folder in the package directory\n";
         echo "\n";
         exit(0);
     } else {

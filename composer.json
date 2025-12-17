@@ -67,7 +67,7 @@
             "echo '📊 Check installation status:'",
             "echo '   vendor/bin/whisper-status'",
             "echo ''",
-            "echo '📖 Documentation: https://github.com/b7s/laravelwhisper'",
+            "echo '📖 Documentation: https://github.com/b7s/whisper-php'",
             "echo ''"
         ]
     },

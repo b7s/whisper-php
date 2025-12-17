@@ -11,6 +11,27 @@ use Symfony\Component\Process\Process;
 
 final class WhisperDownloader
 {
+    /**
+     * Minimum expected sizes for each model in bytes.
+     * These are approximate sizes to detect corrupted/incomplete downloads.
+     * @var array<string, int>
+     */
+    private const MODEL_MIN_SIZES = [
+        'tiny' => 70_000_000,      // ~75MB
+        'tiny.en' => 70_000_000,
+        'base' => 130_000_000,     // ~142MB
+        'base.en' => 130_000_000,
+        'small' => 450_000_000,    // ~466MB
+        'small.en' => 450_000_000,
+        'medium' => 1_400_000_000, // ~1.5GB
+        'medium.en' => 1_400_000_000,
+        'large' => 2_800_000_000,  // ~3GB
+        'large-v1' => 2_800_000_000,
+        'large-v2' => 2_800_000_000,
+        'large-v3' => 2_800_000_000,
+        'large-v3-turbo' => 1_500_000_000, // ~1.6GB
+    ];
+
     public function __construct(
         private readonly WhisperPlatformDetector $platform,
         private readonly WhisperPathResolver $paths,
@@ -162,14 +183,22 @@ final class WhisperDownloader
             );
         }
 
-        if (! file_exists($modelPath) || filesize($modelPath) < 10000000) {
-            $size = file_exists($modelPath) ? filesize($modelPath) : 0;
-            $this->logger->error('Downloaded model file is invalid', ['path' => $modelPath, 'size' => $size]);
+        $expectedMinSize = self::MODEL_MIN_SIZES[$model] ?? 10_000_000;
+        $actualSize = file_exists($modelPath) ? filesize($modelPath) : 0;
+
+        if (! file_exists($modelPath) || $actualSize < $expectedMinSize) {
+            $expectedMB = round($expectedMinSize / 1_000_000);
+            $actualMB = round($actualSize / 1_000_000);
+            $this->logger->error('Downloaded model file is invalid or incomplete', [
+                'path' => $modelPath,
+                'actual_size' => $actualSize,
+                'expected_min_size' => $expectedMinSize,
+            ]);
             @unlink($modelPath);
 
             throw new WhisperException(
-                'Downloaded model file is invalid',
-                "File size: {$size} bytes (expected > 10MB). Download may have been interrupted."
+                'Downloaded model file is invalid or incomplete',
+                "File size: {$actualMB}MB (expected > {$expectedMB}MB for model '{$model}'). Download may have been interrupted."
             );
         }
 
@@ -447,10 +476,47 @@ final class WhisperDownloader
                 );
             }
 
-            $this->logger->info('Compiling whisper.cpp');
-            $makeProcess = new Process(['make']);
-            $makeProcess->setWorkingDirectory($tempDir);
-            $makeProcess->setTimeout(600);
+            $gpuType = $this->platform->getAvailableGpuType();
+            $this->logger->info('Compiling whisper.cpp', ['gpu_type' => $gpuType ?? 'cpu']);
+
+            // Build with CMake for better GPU support
+            $buildDir = "{$tempDir}/build";
+            mkdir($buildDir, 0755, true);
+
+            $cmakeArgs = ['cmake', '..'];
+
+            // Add GPU-specific flags only if compiler is available
+            if ($gpuType === 'cuda') {
+                $this->logger->info('Compiling with CUDA support for NVIDIA GPU');
+                $cmakeArgs[] = '-DGGML_CUDA=ON';
+            } elseif ($gpuType === 'rocm') {
+                $this->logger->info('Compiling with ROCm/HIP support for AMD GPU');
+                $cmakeArgs[] = '-DGGML_HIP=ON';
+            } elseif ($gpuType === 'metal') {
+                $this->logger->info('Compiling with Metal support for Apple GPU');
+                $cmakeArgs[] = '-DGGML_METAL=ON';
+            } else {
+                $this->logger->info('Compiling for CPU only (no GPU toolkit found)');
+            }
+
+            $cmakeProcess = new Process($cmakeArgs);
+            $cmakeProcess->setWorkingDirectory($buildDir);
+            $cmakeProcess->setTimeout(300);
+            $cmakeProcess->run();
+
+            if (! $cmakeProcess->isSuccessful()) {
+                $error = trim($cmakeProcess->getErrorOutput());
+                $this->logger->error('CMake configuration failed', ['error' => $error]);
+
+                throw new WhisperException(
+                    'Failed to configure whisper.cpp build',
+                    $this->getBuildErrorMessage($error)
+                );
+            }
+
+            $makeProcess = new Process(['cmake', '--build', '.', '--config', 'Release', '-j']);
+            $makeProcess->setWorkingDirectory($buildDir);
+            $makeProcess->setTimeout(900);
             $makeProcess->run();
 
             if (! $makeProcess->isSuccessful()) {
@@ -546,6 +612,32 @@ final class WhisperDownloader
                 'Missing build dependencies',
                 "Required tools not found: {$tools}. Install with: {$installCmd}"
             );
+        }
+
+        // Check GPU-specific dependencies
+        $gpuType = $this->platform->getGpuType();
+        if ($gpuType === 'cuda') {
+            $this->checkCudaDependencies();
+        } elseif ($gpuType === 'rocm') {
+            $this->checkRocmDependencies();
+        }
+    }
+
+    private function checkCudaDependencies(): void
+    {
+        if (! $this->platform->hasCudaToolkit()) {
+            $this->logger->warning('CUDA toolkit (nvcc) not found. GPU acceleration may not work.', [
+                'hint' => 'Install CUDA toolkit: https://developer.nvidia.com/cuda-downloads',
+            ]);
+        }
+    }
+
+    private function checkRocmDependencies(): void
+    {
+        if (! $this->platform->hasRocmToolkit()) {
+            $this->logger->warning('ROCm/HIP compiler not found. GPU acceleration may not work.', [
+                'hint' => 'Install ROCm: https://rocm.docs.amd.com/en/latest/deploy/linux/installer/install.html',
+            ]);
         }
     }
 

@@ -496,7 +496,7 @@ final class WhisperTranscriber
 
         if (! $process->isSuccessful() && $this->platform->hasGpuSupport()) {
             $this->logger->info('GPU transcription failed, falling back to CPU');
-            $args = array_filter($args, fn ($arg) => $arg !== '-ng');
+            $args[] = '-ng'; // Force CPU mode
             $process = new Process($args);
             $process->setTimeout(300);
             foreach ($env as $key => $value) {
@@ -588,8 +588,8 @@ final class WhisperTranscriber
             $args[] = '--tdrz';
         }
 
-        // GPU support
-        if ($this->platform->hasGpuSupport()) {
+        // GPU support: only disable GPU (-ng) if GPU is NOT available
+        if (! $this->platform->hasGpuSupport()) {
             $args[] = '-ng';
         }
 
