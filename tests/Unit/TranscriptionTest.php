@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-use LaravelWhisper\Config;
-use LaravelWhisper\NullLogger;
-use LaravelWhisper\Transcription;
-use LaravelWhisper\WhisperPlatformDetector;
-use LaravelWhisper\WhisperPathResolver;
-use LaravelWhisper\WhisperTranscriber;
+use WhisperPHP\Config;
+use WhisperPHP\NullLogger;
+use WhisperPHP\Transcription;
+use WhisperPHP\WhisperPlatformDetector;
+use WhisperPHP\WhisperPathResolver;
+use WhisperPHP\WhisperTranscriber;
 
 beforeEach(function () {
     $platform = new WhisperPlatformDetector();
@@ -120,4 +120,4 @@ test('transcription can chain multiple options', function () {
 test('transcription throws when no file is specified', function () {
     $transcription = new Transcription($this->transcriber);
     $transcription->run();
-})->throws(LaravelWhisper\Exceptions\WhisperException::class, 'No audio file specified');
+})->throws(WhisperPHP\Exceptions\WhisperException::class, 'No audio file specified');

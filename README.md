@@ -2,28 +2,29 @@
 
 <img src="docs/whisper-php-logo.webp" width="340px" alt="[Whisper PHP logo]">
 
-
 # Whisper for PHP
 
 🎙️ **Transform audio into text with Whisper.cpp AI - directly in PHP!**
 
 A powerful, standalone PHP library that brings state-of-the-art speech recognition to your applications. Built on Whisper.cpp for blazing-fast performance, with zero Laravel dependencies. Transcribe, translate, and analyze audio in 99+ languages with a beautiful fluent API.
+
 </div>
 
 ---
 
 ✨ **Features:**
-- 🚀 Fast local transcription (no API calls, no costs)
-- 🌍 99+ languages supported
-- 🎯 High accuracy with multiple model sizes
-- 💬 Speaker detection and timestamps
-- 📝 Export to SRT, VTT, JSON, CSV
-- 🔄 Real-time progress tracking
-- 🎨 Fluent Laravel-style API
-- 🎬 Video support with automatic audio extraction
-- 📦 Smart chunking for large audio/video files
-- 🔒 Privacy-first (all processing happens locally)
-- 🧪 Real tests ([see here](examples/example-models.php))
+
+-   🚀 Fast local transcription (no API calls, no costs)
+-   🌍 99+ languages supported
+-   🎯 High accuracy with multiple model sizes
+-   💬 Speaker detection and timestamps
+-   📝 Export to SRT, VTT, JSON, CSV
+-   🔄 Real-time progress tracking
+-   🎨 Fluent Laravel-style API
+-   🎬 Video support with automatic audio extraction
+-   📦 Smart chunking for large audio/video files
+-   🔒 Privacy-first (all processing happens locally)
+-   🧪 Real tests ([see here](examples/example-models.php))
 
 ---
 
@@ -31,16 +32,16 @@ A powerful, standalone PHP library that brings state-of-the-art speech recogniti
 echo (new Whisper)
     ->audio('/path/to/audio.mp3')
     ->toText();
-``` 
+```
 
 ---
 
 ## Requirements
 
-- PHP 8.2 or higher
-- Composer 2.x
-- curl (for downloads)
-- FFmpeg (will be downloaded automatically if not installed)
+-   PHP 8.2 or higher
+-   Composer 2.x
+-   curl (for downloads)
+-   FFmpeg (will be downloaded automatically if not installed)
 
 ## Installation
 
@@ -57,9 +58,10 @@ php ./vendor/bin/whisper-setup
 > Compile for GPU; if that fails, compile for CPU.
 
 This will download:
-- Whisper binary (~50-100 MB)
-- Model file (~100-500 MB depending on size)
-- FFmpeg binary (~50-80 MB)
+
+-   Whisper binary (~50-100 MB)
+-   Model file (~100-500 MB depending on size)
+-   FFmpeg binary (~50-80 MB)
 
 ### Setup Options
 
@@ -86,10 +88,11 @@ php ./vendor/bin/whisper-status
 ```
 
 This will show:
-- Binary installation status
-- Model installation status
-- FFmpeg availability
-- GPU support detection (fallback to CPU)
+
+-   Binary installation status
+-   Model installation status
+-   FFmpeg availability
+-   GPU support detection (fallback to CPU)
 
 ## Basic Usage
 
@@ -98,8 +101,8 @@ This will show:
 
 require 'vendor/autoload.php';
 
-use LaravelWhisper\Whisper;
-use LaravelWhisper\Config;
+use WhisperPHP\Whisper;
+use WhisperPHP\Config;
 
 // Create service with default configuration (uses 'base' model)
 $whisper = new Whisper();
@@ -127,7 +130,7 @@ $result = $whisper
     ->run();
 
 echo $result->detectedLanguage();  // Auto‑detects language
-print_r($result->segments()); // Array: text, timestamps, speakers 
+print_r($result->segments()); // Array: text, timestamps, speakers
 
 echo $result->toText(); // Pure text
 echo $result->toJson(); // or: toJson(true), toCsv, toVtt, toSrt
@@ -138,7 +141,7 @@ $result->saveTo('/path/to/output.srt'); // Save directly to file (auto detects f
 
 You can easily switch between models at runtime. The model will be downloaded automatically if not available:
 
-> **Note:** If you experience errors like "not all tensors loaded from model file", your model file may be corrupted. Delete it from `~/.local/share/laravelwhisper/models/` and re-download using `php ./vendor/bin/whisper-setup --model=<model-name>`.
+> **Note:** If you experience errors like "not all tensors loaded from model file", your model file may be corrupted. Delete it from `~/.local/share/whisper-php/models/` and re-download using `php ./vendor/bin/whisper-setup --model=<model-name>`.
 
 ```php
 $whisper = new Whisper();
@@ -194,14 +197,14 @@ $whisper = new Whisper($config);
 ```
 
 **Parameters:**
-- `model`: Model to use (default: `base`) - See [Available Models](#available-models) section
-- `language`: Language for transcription (default: `auto`) - ISO language code or 'auto' for detection
-- `dataDir`: Directory to store binaries and models (default: `~/.local/share/laravelwhisper`)
-- `binaryPath`: Custom path to Whisper binary (optional)
-- `modelPath`: Custom path to model file (optional)
-- `ffmpegPath`: Custom path to FFmpeg binary (optional)
-- `chunkSize`: Chunk size for large audio files (default: 20 MB)
 
+-   `model`: Model to use (default: `base`) - See [Available Models](#available-models) section
+-   `language`: Language for transcription (default: `auto`) - ISO language code or 'auto' for detection
+-   `dataDir`: Directory to store binaries and models (default: `~/.local/share/whisper-php`)
+-   `binaryPath`: Custom path to Whisper binary (optional)
+-   `modelPath`: Custom path to model file (optional)
+-   `ffmpegPath`: Custom path to FFmpeg binary (optional)
+-   `chunkSize`: Chunk size for large audio files (default: 20 MB)
 
 ### Model Installation
 
@@ -226,8 +229,9 @@ php ./vendor/bin/whisper-setup --model=large
 ### Official Documentation
 
 For more details about Whisper models, see:
-- [OpenAI Whisper Model Card](https://github.com/openai/whisper/blob/main/model-card.md)
-- [Whisper.cpp Models](https://github.com/ggml-org/whisper.cpp/tree/master/models)
+
+-   [OpenAI Whisper Model Card](https://github.com/openai/whisper/blob/main/model-card.md)
+-   [Whisper.cpp Models](https://github.com/ggml-org/whisper.cpp/tree/master/models)
 
 ## Fluent API
 
@@ -260,9 +264,10 @@ $text = $whisper->audio('/path/to/spanish-audio.mp3')
 ```
 
 **Use cases:**
-- Translating foreign language podcasts to English
-- Creating English subtitles for international videos
-- Processing multilingual customer support calls
+
+-   Translating foreign language podcasts to English
+-   Creating English subtitles for international videos
+-   Processing multilingual customer support calls
 
 ### Language Detection and Specification
 
@@ -301,10 +306,11 @@ echo $result->detectedLanguage(); // 'pt'
 ```
 
 **Use cases:**
-- Routing calls to appropriate language support teams
-- Organizing multilingual audio libraries
-- Triggering language-specific processing workflows
-- Improving transcription accuracy when language is known
+
+-   Routing calls to appropriate language support teams
+-   Organizing multilingual audio libraries
+-   Triggering language-specific processing workflows
+-   Improving transcription accuracy when language is known
 
 ### Export Formats (SRT, VTT, JSON, CSV)
 
@@ -330,9 +336,10 @@ $whisper->audio('/path/to/audio.mp3')->saveTo('/path/to/output.vtt');
 ```
 
 **Use cases:**
-- Creating subtitles for videos (SRT/VTT)
-- Building searchable transcription databases (JSON)
-- Analyzing speech patterns in spreadsheets (CSV)
+
+-   Creating subtitles for videos (SRT/VTT)
+-   Building searchable transcription databases (JSON)
+-   Analyzing speech patterns in spreadsheets (CSV)
 
 ### improveDecode - Beam Search (Better Quality)
 
@@ -346,14 +353,16 @@ $text = $whisper->audio('/path/to/audio.mp3')
 ```
 
 **When to use:**
-- Important transcriptions where accuracy is critical (legal, medical)
-- Audio with difficult accents or background noise
-- When you have time and need the best possible result
+
+-   Important transcriptions where accuracy is critical (legal, medical)
+-   Audio with difficult accents or background noise
+-   When you have time and need the best possible result
 
 **When NOT to use:**
-- Real-time or near-real-time transcription
-- Processing large volumes of audio quickly
-- Audio quality is already very good
+
+-   Real-time or near-real-time transcription
+-   Processing large volumes of audio quickly
+-   Audio quality is already very good
 
 ### filterNonSpeech - Voice Activity Detection (VAD)
 
@@ -367,15 +376,17 @@ $segments = $whisper->audio('/path/to/audio.mp3')
 ```
 
 **Use cases:**
-- Podcasts with intro/outro music
-- Recordings with long pauses between sentences
-- Noisy environments with intermittent speech
-- Improving timestamp accuracy
+
+-   Podcasts with intro/outro music
+-   Recordings with long pauses between sentences
+-   Noisy environments with intermittent speech
+-   Improving timestamp accuracy
 
 **Threshold guide:**
-- `0.3` - Very sensitive (catches quiet speech, may include some noise)
-- `0.5` - Balanced (default, good for most cases)
-- `0.7` - Conservative (only clear speech, may miss quiet parts)
+
+-   `0.3` - Very sensitive (catches quiet speech, may include some noise)
+-   `0.5` - Balanced (default, good for most cases)
+-   `0.7` - Conservative (only clear speech, may miss quiet parts)
 
 ### Context Guidance
 
@@ -399,17 +410,19 @@ $text = $whisper->audio('/path/to/meeting.mp3')
 ```
 
 **Use cases:**
-- Medical transcriptions (drug names, procedures)
-- Legal transcriptions (case names, legal terms)
-- Technical presentations (software terms, acronyms)
-- Business meetings (employee names, product names)
-- Any domain with specialized vocabulary
+
+-   Medical transcriptions (drug names, procedures)
+-   Legal transcriptions (case names, legal terms)
+-   Technical presentations (software terms, acronyms)
+-   Business meetings (employee names, product names)
+-   Any domain with specialized vocabulary
 
 **Tips:**
-- Include 5-15 key terms relevant to your audio
-- Use actual words/names that will appear in the audio
-- Separate terms with commas or natural language
-- More specific = better results
+
+-   Include 5-15 key terms relevant to your audio
+-   Use actual words/names that will appear in the audio
+-   Separate terms with commas or natural language
+-   More specific = better results
 
 ### Speaker Detection (Experimental)
 
@@ -428,17 +441,19 @@ $segments = $whisper->audio('/path/to/conversation.mp3')
 ```
 
 **Use cases:**
-- Interview transcriptions
-- Meeting minutes
-- Podcast conversations
-- Customer service call analysis
-- Multi-speaker presentations
+
+-   Interview transcriptions
+-   Meeting minutes
+-   Podcast conversations
+-   Customer service call analysis
+-   Multi-speaker presentations
 
 **Limitations:**
-- Experimental feature (may not be 100% accurate)
-- Doesn't identify who speakers are (just that they're different)
-- Works best with clear audio and distinct voices
-- May struggle with overlapping speech
+
+-   Experimental feature (may not be 100% accurate)
+-   Doesn't identify who speakers are (just that they're different)
+-   Works best with clear audio and distinct voices
+-   May struggle with overlapping speech
 
 ### Progress Callback
 
@@ -455,10 +470,11 @@ $text = $whisper->audio('/path/to/long-audio.mp3')
 ```
 
 **Use cases:**
-- Showing progress bars in web applications
-- Updating job status in queues
-- Logging progress for long-running tasks
-- Providing user feedback during processing
+
+-   Showing progress bars in web applications
+-   Updating job status in queues
+-   Logging progress for long-running tasks
+-   Providing user feedback during processing
 
 ### Timeout Configuration
 
@@ -493,22 +509,25 @@ $text = $whisper->video('/path/to/video.mp4')
 ```
 
 **Default timeouts:**
-- Audio files: 5 minutes (300 seconds)
-- Video files: 20 minutes (1200 seconds)
-- FFmpeg operations: 10 minutes (600 seconds)
+
+-   Audio files: 5 minutes (300 seconds)
+-   Video files: 20 minutes (1200 seconds)
+-   FFmpeg operations: 10 minutes (600 seconds)
 
 **Use cases:**
-- Processing very long recordings (conferences, lectures)
-- Preventing hung processes in production
-- Adjusting for slower systems or large models
-- Queue job timeout management
+
+-   Processing very long recordings (conferences, lectures)
+-   Preventing hung processes in production
+-   Adjusting for slower systems or large models
+-   Queue job timeout management
 
 **Tips:**
-- **Use `timeout(null)` for large videos** - This is the recommended approach for videos over 20 minutes
-- Increase timeout for large models (`medium`, `large`) which process slower
-- Consider chunking for files that consistently timeout
-- The default 20-minute timeout for videos may not be enough for long recordings
-- Audio files default to 5 minutes, which is usually sufficient
+
+-   **Use `timeout(null)` for large videos** - This is the recommended approach for videos over 20 minutes
+-   Increase timeout for large models (`medium`, `large`) which process slower
+-   Consider chunking for files that consistently timeout
+-   The default 20-minute timeout for videos may not be enough for long recordings
+-   Audio files default to 5 minutes, which is usually sufficient
 
 ### Video Support
 
@@ -535,15 +554,17 @@ if ($whisper->isVideoFile('/path/to/file.mp4')) {
 ```
 
 **Supported formats:**
-- MP4, MKV, AVI, MOV, WMV, FLV, WebM, M4V
-- MPEG, MPG, 3GP, 3G2, OGV, TS, MTS, M2TS
+
+-   MP4, MKV, AVI, MOV, WMV, FLV, WebM, M4V
+-   MPEG, MPG, 3GP, 3G2, OGV, TS, MTS, M2TS
 
 **Use cases:**
-- Creating subtitles for videos
-- Transcribing video conferences
-- Processing YouTube downloads
-- Extracting dialogue from movies
-- Analyzing video content
+
+-   Creating subtitles for videos
+-   Transcribing video conferences
+-   Processing YouTube downloads
+-   Extracting dialogue from movies
+-   Analyzing video content
 
 ### Chunking for Large Files
 
@@ -569,12 +590,14 @@ $whisper = new Whisper($config);
 ```
 
 **When to use:**
-- Audio/video files larger than 20MB
-- Long recordings (>30 minutes)
-- Processing on memory-constrained systems
-- Video files (automatically enabled)
+
+-   Audio/video files larger than 20MB
+-   Long recordings (>30 minutes)
+-   Processing on memory-constrained systems
+-   Video files (automatically enabled)
 
 **How it works:**
+
 1. Calculates optimal chunk duration based on file size
 2. Splits audio into overlapping segments
 3. Transcribes each chunk independently
@@ -582,55 +605,59 @@ $whisper = new Whisper($config);
 5. Returns seamless transcription
 
 **Use cases:**
-- Multi-hour podcasts or lectures
-- Full-length movies or documentaries
-- All-day conference recordings
-- Large video files
-- Batch processing of media libraries
+
+-   Multi-hour podcasts or lectures
+-   Full-length movies or documentaries
+-   All-day conference recordings
+-   Large video files
+-   Batch processing of media libraries
 
 ## Available Models
 
-laravelwhisper supports all Whisper model sizes. Choose based on your accuracy needs and available resources.
+whisper-php supports all Whisper model sizes. Choose based on your accuracy needs and available resources.
 
 ### Model Comparison
 
-| Model    | Parameters | Size    | Speed          | Accuracy        | Best For                      |
-| -------- | ---------- | ------- | -------------- | --------------- | ----------------------------- |
-| `tiny`   | 39M        | ~75 MB  | ⚡⚡⚡⚡⚡ Fastest  | ⭐⭐ Basic        | Real-time, testing            |
-| `base`   | 74M        | ~140 MB | ⚡⚡⚡⚡ Very Fast | ⭐⭐⭐ Good        | **Recommended for most uses** |
-| `small`  | 244M       | ~460 MB | ⚡⚡⚡ Fast       | ⭐⭐⭐⭐ Very Good  | Production, good quality      |
-| `medium` | 769M       | ~1.5 GB | ⚡⚡ Moderate    | ⭐⭐⭐⭐⭐ Excellent | High accuracy needs           |
-| `large`  | 1550M      | ~3 GB   | ⚡ Slow         | ⭐⭐⭐⭐⭐ Best      | Maximum accuracy, research    |
+| Model    | Parameters | Size    | Speed              | Accuracy             | Best For                      |
+| -------- | ---------- | ------- | ------------------ | -------------------- | ----------------------------- |
+| `tiny`   | 39M        | ~75 MB  | ⚡⚡⚡⚡⚡ Fastest | ⭐⭐ Basic           | Real-time, testing            |
+| `base`   | 74M        | ~140 MB | ⚡⚡⚡⚡ Very Fast | ⭐⭐⭐ Good          | **Recommended for most uses** |
+| `small`  | 244M       | ~460 MB | ⚡⚡⚡ Fast        | ⭐⭐⭐⭐ Very Good   | Production, good quality      |
+| `medium` | 769M       | ~1.5 GB | ⚡⚡ Moderate      | ⭐⭐⭐⭐⭐ Excellent | High accuracy needs           |
+| `large`  | 1550M      | ~3 GB   | ⚡ Slow            | ⭐⭐⭐⭐⭐ Best      | Maximum accuracy, research    |
 
 ### English-Only vs Multilingual
 
 Each model (except `large`) comes in two variants:
 
-- **Multilingual** (`tiny`, `base`, `small`, `medium`): Supports 99+ languages
-- **English-only** (`tiny.en`, `base.en`, `small.en`, `medium.en`): Optimized for English, slightly better accuracy
+-   **Multilingual** (`tiny`, `base`, `small`, `medium`): Supports 99+ languages
+-   **English-only** (`tiny.en`, `base.en`, `small.en`, `medium.en`): Optimized for English, slightly better accuracy
 
 **Recommendation:** Use `.en` models if you only transcribe English audio. They're faster and more accurate for English.
 
 ### Which Model Should You Choose?
 
 **For English audio:**
-- 🥇 **Best balanced:** `base.en` - Great accuracy, fast, small size
-- 🥈 **Higher quality:** `small.en` - Better accuracy, still reasonably fast
-- 🥉 **Maximum quality:** `medium.en` or `large` - Best accuracy, slower
+
+-   🥇 **Best balanced:** `base.en` - Great accuracy, fast, small size
+-   🥈 **Higher quality:** `small.en` - Better accuracy, still reasonably fast
+-   🥉 **Maximum quality:** `medium.en` or `large` - Best accuracy, slower
 
 **For multilingual audio:**
-- 🥇 **Best balanced:** `base` - Good for most languages
-- 🥈 **Better quality:** `small` - Recommended for production
-- 🥉 **Maximum quality:** `medium` or `large` - Best for critical applications
+
+-   🥇 **Best balanced:** `base` - Good for most languages
+-   🥈 **Better quality:** `small` - Recommended for production
+-   🥉 **Maximum quality:** `medium` or `large` - Best for critical applications
 
 **For specific use cases:**
-- **Real-time transcription:** `tiny` or `tiny.en`
-- **Mobile/embedded devices:** `tiny` or `base`
-- **Podcasts/interviews (English):** `base.en` or `small.en`
-- **Podcasts/interviews (multilingual):** `base` or `small`
-- **Medical/legal (high accuracy):** `medium.en` or `large`
-- **Multiple languages with auto-detect:** `base` or `small` (default: `base`)
-- **Testing/development:** `tiny.en` (fastest downloads)
+
+-   **Real-time transcription:** `tiny` or `tiny.en`
+-   **Mobile/embedded devices:** `tiny` or `base`
+-   **Podcasts/interviews (English):** `base.en` or `small.en`
+-   **Podcasts/interviews (multilingual):** `base` or `small`
+-   **Medical/legal (high accuracy):** `medium.en` or `large`
+-   **Multiple languages with auto-detect:** `base` or `small` (default: `base`)
+-   **Testing/development:** `tiny.en` (fastest downloads)
 
 ## Real-World Examples
 
@@ -749,7 +776,7 @@ foreach ($files as $file) {
     $transcription = $whisper->isVideoFile($file['path'])
         ? $whisper->video($file['path'])
         : $whisper->audio($file['path']);
-    
+
     // Apply settings based on type
     match($file['type']) {
         'meeting' => $transcription
@@ -763,7 +790,7 @@ foreach ($files as $file) {
             ->detectSpeakers()
             ->improveDecode(5),
     };
-    
+
     $outputPath = preg_replace('/\.(mp3|mp4|mkv|avi)$/', '.srt', $file['path']);
     $transcription->saveTo($outputPath);
 }
@@ -790,12 +817,12 @@ $result->saveTo('file.srt');  // Save to file
 
 ## Logging
 
-You can implement your own logging class by implementing the `LaravelWhisper\Logger` interface:
+You can implement your own logging class by implementing the `WhisperPHP\Logger` interface:
 
 ```php
 <?php
 
-use LaravelWhisper\Logger;
+use WhisperPHP\Logger;
 
 class MyLogger implements Logger
 {
@@ -817,8 +844,6 @@ class MyLogger implements Logger
 
 $whisper = new Whisper(logger: new MyLogger());
 ```
-
-
 
 ## Testing
 
@@ -851,6 +876,6 @@ MIT
 
 **Made with ❤️ 🐱 by Bruno**
 
-[Report Bug](https://github.com/b7s/laravelwhisper) • [Request Feature](https://github.com/b7s/laravelwhisper/issues)
+[Report Bug](https://github.com/b7s/whisper-php) • [Request Feature](https://github.com/b7s/whisper-php/issues)
 
 </div>

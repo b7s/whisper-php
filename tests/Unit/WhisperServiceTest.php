@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use LaravelWhisper\Config;
-use LaravelWhisper\NullLogger;
-use LaravelWhisper\Whisper;
+use WhisperPHP\Config;
+use WhisperPHP\NullLogger;
+use WhisperPHP\Whisper;
 
 test('whisper service can be instantiated', function () {
     $service = new Whisper();

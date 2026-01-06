@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace LaravelWhisper;
+namespace WhisperPHP;
 
-use LaravelWhisper\Exceptions\WhisperException;
+use WhisperPHP\Exceptions\WhisperException;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use Symfony\Component\Process\Process;

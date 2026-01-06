@@ -4,7 +4,7 @@
 declare(strict_types=1);
 
 /**
- * laravelwhisper Status Command
+ * whisper-php Status Command
  * 
  * Check the installation status of Whisper binaries and models.
  */
@@ -31,8 +31,8 @@ if ($autoloadPath === null) {
 
 require $autoloadPath;
 
-use LaravelWhisper\Config;
-use LaravelWhisper\Whisper;
+use WhisperPHP\Config;
+use WhisperPHP\Whisper;
 
 // Create service
 $config = new Config();
@@ -41,7 +41,7 @@ $whisper = new Whisper($config);
 // Display header
 echo "\n";
 echo "╔══════════════════════════════════════════════════════════════╗\n";
-echo "║              laravelwhisper Installation Status                  ║\n";
+echo "║              whisper-php Installation Status                 ║\n";
 echo "╚══════════════════════════════════════════════════════════════╝\n";
 echo "\n";
 

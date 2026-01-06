@@ -1,5 +1,5 @@
 {
-    "name": "b7s/laravelwhisper",
+    "name": "b7s/whisper-php",
     "description": "Transform audio into text with Whisper.cpp AI - directly in PHP",
     "type": "library",
     "license": "MIT",
@@ -19,7 +19,7 @@
     },
     "autoload": {
         "psr-4": {
-            "LaravelWhisper\\": "src/"
+            "WhisperPHP\\": "src/"
         },
         "files": [
             "src/helpers.php"
@@ -27,7 +27,7 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "LaravelWhisper\\Tests\\": "tests/"
+            "WhisperPHP\\Tests\\": "tests/"
         }
     },
     "bin": [
@@ -54,7 +54,7 @@
         "whisper:info": [
             "echo ''",
             "echo '╔══════════════════════════════════════════════════════════════╗'",
-            "echo '║              laravelwhisper Installed Successfully               ║'",
+            "echo '║              whisper-php Installed Successfully              ║'",
             "echo '╚══════════════════════════════════════════════════════════════╝'",
             "echo ''",
             "echo '📦 Next step: Run setup to download Whisper binaries and models'",

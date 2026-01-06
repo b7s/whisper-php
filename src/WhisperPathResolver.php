@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace LaravelWhisper;
+namespace WhisperPHP;
 
 use Symfony\Component\Process\Process;
 
@@ -100,13 +100,13 @@ final class WhisperPathResolver
         $home = $_SERVER['HOME'] ?? $_SERVER['USERPROFILE'] ?? getenv('HOME') ?: getenv('USERPROFILE');
 
         if (! $home) {
-            return sys_get_temp_dir() . '/laravelwhisper';
+            return sys_get_temp_dir() . '/whisper-php';
         }
 
         return match ($this->platform->getOS()) {
-            'darwin' => "{$home}/Library/Application Support/laravelwhisper",
-            'windows' => ($_SERVER['LOCALAPPDATA'] ?? $_SERVER['APPDATA'] ?? "{$home}/AppData/Local") . '/laravelwhisper',
-            default => "{$home}/.local/share/laravelwhisper",
+            'darwin' => "{$home}/Library/Application Support/whisper-php",
+            'windows' => ($_SERVER['LOCALAPPDATA'] ?? $_SERVER['APPDATA'] ?? "{$home}/AppData/Local") . '/whisper-php',
+            default => "{$home}/.local/share/whisper-php",
         };
     }
 }

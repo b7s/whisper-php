@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 require 'vendor/autoload.php';
 
-use LaravelWhisper\Config;
-use LaravelWhisper\Whisper;
-use LaravelWhisper\Translator;
+use WhisperPHP\Config;
+use WhisperPHP\Whisper;
+use WhisperPHP\Translator;
 
 /**
- * laravelwhisper - Example Usage
+ * whisper-php - Example Usage
  * 
  * This file demonstrates all features of the library.
  * Uncomment the examples you want to try and provide a valid audio file path.
@@ -20,7 +20,7 @@ use LaravelWhisper\Translator;
 // ============================================================================
 
 echo "╔══════════════════════════════════════════════════════════════╗\n";
-echo "║              laravelwhisper - Audio Transcription                ║\n";
+echo "║              whisper-php - Audio Transcription                ║\n";
 echo "╚══════════════════════════════════════════════════════════════╝\n\n";
 
 // Set locale (optional)

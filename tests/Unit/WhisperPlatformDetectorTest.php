@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use LaravelWhisper\WhisperPlatformDetector;
+use WhisperPHP\WhisperPlatformDetector;
 
 test('platform detector can detect OS', function () {
     $detector = new WhisperPlatformDetector();

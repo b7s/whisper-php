@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use LaravelWhisper\Config;
+use WhisperPHP\Config;
 
 test('config can be created with default values', function () {
     $config = new Config();

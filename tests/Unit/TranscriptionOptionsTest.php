@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use LaravelWhisper\TranscriptionOptions;
+use WhisperPHP\TranscriptionOptions;
 
 test('transcription options can be created with defaults', function () {
     $options = new TranscriptionOptions();

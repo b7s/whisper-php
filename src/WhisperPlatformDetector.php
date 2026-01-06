@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace LaravelWhisper;
+namespace WhisperPHP;
 
 use Symfony\Component\Process\Process;
 

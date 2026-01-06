@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use LaravelWhisper\Config;
-use LaravelWhisper\WhisperPathResolver;
-use LaravelWhisper\WhisperPlatformDetector;
+use WhisperPHP\Config;
+use WhisperPHP\WhisperPathResolver;
+use WhisperPHP\WhisperPlatformDetector;
 
 test('path resolver can get data directory', function () {
     $platform = new WhisperPlatformDetector();
@@ -75,7 +75,7 @@ test('path resolver can generate temp paths', function () {
 
 test('path resolver can ensure directories exist', function () {
     $platform = new WhisperPlatformDetector();
-    $tempDir = sys_get_temp_dir() . '/laravelwhisper_test_' . uniqid();
+    $tempDir = sys_get_temp_dir() . '/whisper-php_test_' . uniqid();
     $config = new Config(dataDir: $tempDir);
     $resolver = new WhisperPathResolver($platform, $config);
 

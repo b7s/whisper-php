@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use LaravelWhisper\Exceptions\WhisperException;
+use WhisperPHP\Exceptions\WhisperException;
 
 test('whisper exception can be created with message', function () {
     $exception = new WhisperException('Test error');

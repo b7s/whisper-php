@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace LaravelWhisper\Tests;
+namespace WhisperPHP\Tests;
 
 use PHPUnit\Framework\TestCase as BaseTestCase;
 

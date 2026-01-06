@@ -6,7 +6,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/../vendor/autoload.php';
 
-use LaravelWhisper\Whisper;
+use WhisperPHP\Whisper;
 
 // Create Whisper instance (uses 'base' model by default)
 $whisper = new Whisper();
@@ -140,5 +140,5 @@ echo '📝 Text extracted: ' . mb_substr($finalText, 0, 40, 'UTF-8') . "...\n\n"
 // save file
 $outputFile = __DIR__ . '/video-transcript.txt';
 file_put_contents($outputFile, $finalText);
-echo "💾 Salvo em: {$outputFile}\n";
+echo "💾 Saved in: {$outputFile}\n";
 */

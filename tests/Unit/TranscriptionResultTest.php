@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use LaravelWhisper\TranscriptionResult;
+use WhisperPHP\TranscriptionResult;
 
 test('transcription result can be created with text only', function () {
     $result = new TranscriptionResult('Hello world');

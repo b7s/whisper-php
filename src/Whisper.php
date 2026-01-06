@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace LaravelWhisper;
+namespace WhisperPHP;
 
-use LaravelWhisper\Exceptions\WhisperException;
+use WhisperPHP\Exceptions\WhisperException;
 
 final class Whisper
 {

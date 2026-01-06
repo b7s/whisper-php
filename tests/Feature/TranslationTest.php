@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use LaravelWhisper\Whisper;
+use WhisperPHP\Whisper;
 
 test('can translate japanese audio to english', function () {
     $whisper = new Whisper();

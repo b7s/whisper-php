@@ -4,10 +4,10 @@
 declare(strict_types=1);
 
 /**
- * laravelwhisper Setup Command
+ * whisper-php Setup Command
  * 
  * This script downloads and configures Whisper binaries, models, and FFmpeg.
- * Run after installing the package: composer require b7s/laravelwhisper
+ * Run after installing the package: composer require b7s/whisper-php
  */
 
 // Find autoload.php
@@ -32,10 +32,10 @@ if ($autoloadPath === null) {
 
 require $autoloadPath;
 
-use LaravelWhisper\Config;
-use LaravelWhisper\Whisper;
-use LaravelWhisper\WhisperPlatformDetector;
-use LaravelWhisper\WhisperPathResolver;
+use WhisperPHP\Config;
+use WhisperPHP\Whisper;
+use WhisperPHP\WhisperPlatformDetector;
+use WhisperPHP\WhisperPathResolver;
 
 // Parse command line arguments
 $options = getopt('', ['model:', 'language:', 'dir:', 'help']);
@@ -53,7 +53,7 @@ $config = new Config(
 );
 
 // Create service
-$whisper = new Whisper($config, new class implements \LaravelWhisper\Logger {
+$whisper = new Whisper($config, new class implements \WhisperPHP\Logger {
     public function info(string $message, array $context = []): void
     {
         echo "ℹ️  {$message}\n";
@@ -78,7 +78,7 @@ $dataDir = $pathResolver->getDataDirectory();
 // Display header
 echo "\n";
 echo "╔══════════════════════════════════════════════════════════════╗\n";
-echo "║              laravelwhisper Setup Wizard                         ║\n";
+echo "║              whisper-php Setup Wizard                        ║\n";
 echo "╚══════════════════════════════════════════════════════════════╝\n";
 echo "\n";
 
@@ -158,7 +158,7 @@ try {
         echo "   <?php\n";
         echo "   require 'vendor/autoload.php';\n";
         echo "\n";
-        echo "   use LaravelWhisper\\Whisper;\n";
+        echo "   use WhisperPHP\\Whisper;\n";
         echo "\n";
         echo "   \$whisper = new Whisper();\n";
         echo "   \$text = \$whisper->audio('/path/to/audio.mp3')->toText();\n";
@@ -184,7 +184,7 @@ try {
 function showHelp(): void
 {
     echo "\n";
-    echo "laravelwhisper Setup Command\n";
+    echo "whisper-php Setup Command\n";
     echo "\n";
     echo "Usage:\n";
     echo "  vendor/bin/whisper-setup [options]\n";
@@ -198,7 +198,7 @@ function showHelp(): void
     echo "                      Examples: en, pt, es, fr, de, etc.\n";
     echo "\n";
     echo "  --dir=PATH          Custom data directory\n";
-    echo "                      Default: ~/.local/share/laravelwhisper\n";
+    echo "                      Default: ~/.local/share/whisper-php\n";
     echo "\n";
     echo "  --help              Show this help message\n";
     echo "\n";

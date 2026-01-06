@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace LaravelWhisper\Exceptions;
+namespace WhisperPHP\Exceptions;
 
 use Exception;
 

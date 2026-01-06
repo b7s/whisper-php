@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use LaravelWhisper\Logger;
-use LaravelWhisper\NullLogger;
+use WhisperPHP\Logger;
+use WhisperPHP\NullLogger;
 
 test('null logger implements logger interface', function () {
     $logger = new NullLogger();
