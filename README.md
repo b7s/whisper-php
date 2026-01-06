@@ -63,6 +63,28 @@ This will download:
 -   Model file (~100-500 MB depending on size)
 -   FFmpeg binary (~50-80 MB)
 
+
+### Build Dependencies (for compilation)
+
+When running `whisper-setup`, the library compiles Whisper from source. The following build tools are required:
+
+**Linux (Ubuntu/Debian):**
+```bash
+sudo apt install git cmake make build-essential
+```
+
+**macOS:**
+```bash
+brew install git cmake make
+```
+
+**Other Linux distributions:**
+- **Fedora/RHEL:** `sudo dnf install git cmake make gcc-c++`
+- **Arch Linux:** `sudo pacman -S git cmake make gcc`
+
+> These tools are only needed during initial setup. After compilation, they're not required for normal operation.
+
+
 ### Setup Options
 
 ```bash

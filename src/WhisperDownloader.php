@@ -609,8 +609,11 @@ final class WhisperDownloader
             $installCmd = $this->getInstallCommand($missing);
 
             throw new WhisperException(
-                'Missing build dependencies',
-                "Required tools not found: {$tools}. Install with: {$installCmd}"
+                'Missing build dependencies for compiling Whisper',
+                "The following build tools are required but not found on your system: {$tools}\n\n".
+                "To install them, run:\n{$installCmd}\n\n".
+                "These tools are needed to compile the Whisper binary from source. ".
+                "After installation, run 'php ./vendor/bin/whisper-setup' again."
             );
         }
 
