@@ -393,11 +393,8 @@ final class WhisperTranscriber
         $binaryPath = $this->paths->getBinaryPath();
         $env = $this->getWhisperEnvironment();
 
-        $process = new Process([$binaryPath, '--help']);
+        $process = new Process([$binaryPath, '--help'], null, $env);
         $process->setTimeout(5);
-        foreach ($env as $key => $value) {
-            $process->setEnv([$key => $value]);
-        }
         $process->run();
 
         if ($process->getExitCode() === 127) {
@@ -496,11 +493,8 @@ final class WhisperTranscriber
         ]);
 
         $env = $this->getWhisperEnvironment();
-        $process = new Process($args);
+        $process = new Process($args, null, $env);
         $process->setTimeout($timeout);
-        foreach ($env as $key => $value) {
-            $process->setEnv([$key => $value]);
-        }
 
         $progressCallback = $options->getProgressCallback();
         if ($progressCallback !== null) {
@@ -516,11 +510,8 @@ final class WhisperTranscriber
         if (! $process->isSuccessful() && $this->platform->hasGpuSupport()) {
             $this->logger->info('GPU transcription failed, falling back to CPU');
             $args[] = '-ng'; // Force CPU mode
-            $process = new Process($args);
+            $process = new Process($args, null, $env);
             $process->setTimeout($timeout);
-            foreach ($env as $key => $value) {
-                $process->setEnv([$key => $value]);
-            }
             $process->run();
         }
 
