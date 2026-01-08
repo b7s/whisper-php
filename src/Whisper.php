@@ -108,7 +108,7 @@ final class Whisper
 
         $ffmpegDownloaded = $this->downloader->downloadFfmpeg();
         $binaryDownloaded = $this->downloader->downloadBinary();
-        $modelDownloaded = $this->downloader->downloadModel();
+        $modelDownloaded = $this->downloader->downloadModel($this->config->model);
 
         return $ffmpegDownloaded && $binaryDownloaded && $modelDownloaded;
     }
