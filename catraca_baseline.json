@@ -1,0 +1,83 @@
+{
+    "schema": "catraca/v1",
+    "source_dirs": {
+        "paths": [
+            "src",
+            "app",
+            "lib"
+        ]
+    },
+    "security": {
+        "advisories": null,
+        "rules": {
+            "hardcoded_secrets": true,
+            "sql_injection": true,
+            "command_injection": true,
+            "csrf_protection": true,
+            "path_traversal": true,
+            "insecure_deserialization": true,
+            "ssrf": true,
+            "tls_verification": true,
+            "insecure_rng": true,
+            "gitignore_sensitive": true,
+            "package_freshness": true,
+            "weak_cryptography": true,
+            "cors_config": true,
+            "npm_audit": true
+        },
+        "fixers": [],
+        "released_days": 3,
+        "findings": 0,
+        "critical": 0
+    },
+    "style": {
+        "violations": 0
+    },
+    "static_analysis": {
+        "errors": 0
+    },
+    "coverage": {
+        "percentage": null
+    },
+    "duplication": {
+        "percentage": 0,
+        "clones": [],
+        "min_lines": 3,
+        "min_tokens": 30
+    },
+    "performance": {
+        "violations": 5,
+        "rules": {
+            "global_namespace_import": true,
+            "no_unused_imports": true,
+            "fully_qualified_strict_types": true,
+            "lambda_not_used_import": true,
+            "native_function_invocation": true,
+            "no_redundant_readonly_property": true,
+            "static_lambda": true,
+            "array_push": true,
+            "ereg_to_preg": true,
+            "modernize_strpos": true,
+            "pow_to_exponentiation": true,
+            "random_api_migration": true,
+            "set_type_to_cast": true,
+            "autoload_optimization": true,
+            "condition_order": true
+        },
+        "fixers": {
+            "condition_order": false
+        }
+    },
+    "file_size": {
+        "max_lines": 1000,
+        "over_limit": 0
+    },
+    "complexity": {
+        "max_ccn": 0
+    },
+    "parallel": {
+        "enabled": true
+    },
+    "created_at": "+2026-07-03T00:36:15+00:00",
+    "updated_at": "2026-07-03T00:46:31+00:00"
+}

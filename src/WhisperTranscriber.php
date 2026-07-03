@@ -65,7 +65,7 @@ final class WhisperTranscriber
         }
 
         $isVideo = $this->isVideoFile($audioPath);
-        $shouldChunk = $options->isChunkingEnabled() || $isVideo;
+        $shouldChunk = $isVideo || $options->isChunkingEnabled();
 
         // Set default timeout for videos if not explicitly set by user
         if ($isVideo && !$options->isTimeoutExplicitlySet()) {
@@ -119,24 +119,7 @@ final class WhisperTranscriber
         }
 
         try {
-            $fileSize = filesize($audioPath);
-
-            // If file is smaller than chunk size, process normally
-            if ($fileSize !== false && $fileSize <= $chunkSize) {
-                $this->logger->info('File size within chunk limit, processing without splitting', [
-                    'size' => $fileSize,
-                    'chunk_size' => $chunkSize,
-                ]);
-                $timeout = $options->isTimeoutExplicitlySet() ? $options->getTimeout() : 600;
-                $tempWavPath = $this->convertFileToWav($audioPath, $timeout);
-                try {
-                    return $this->runWhisper($tempWavPath, $options);
-                } finally {
-                    @unlink($tempWavPath);
-                }
-            }
-
-            return $this->processInChunks($audioPath, $options, $chunkSize);
+            return $this->transcribeAudio($audioPath, $options, $chunkSize);
         } finally {
             if ($isVideo && $audioPath !== $inputPath) {
                 @unlink($audioPath);
@@ -145,7 +128,34 @@ final class WhisperTranscriber
     }
 
     /**
-     * Extract audio track from video file.
+     * @throws WhisperException
+     */
+    private function transcribeAudio(string $audioPath, TranscriptionOptions $options, int $chunkSize): TranscriptionResult
+    {
+        $fileSize = filesize($audioPath);
+
+        // If file is smaller than chunk size, process normally
+        if ($fileSize !== false && $fileSize <= $chunkSize) {
+            $this->logger->info('File size within chunk limit, processing without splitting', [
+                'size' => $fileSize,
+                'chunk_size' => $chunkSize,
+            ]);
+
+            $timeout = $options->isTimeoutExplicitlySet() ? $options->getTimeout() : 600;
+            $tempWavPath = $this->convertFileToWav($audioPath, $timeout);
+
+            try {
+                return $this->runWhisper($tempWavPath, $options);
+            } finally {
+                @unlink($tempWavPath);
+            }
+        }
+
+        return $this->processInChunks($audioPath, $options, $chunkSize);
+    }
+
+    /**
+     * Extract audio track from a video file.
      *
      * @throws WhisperException
      */
@@ -357,7 +367,7 @@ final class WhisperTranscriber
     }
 
     /**
-     * Add time offset to timestamp string.
+     * Add a time offset to the timestamp string.
      */
     private function addTimeOffset(string $timestamp, float $offsetSeconds): string
     {

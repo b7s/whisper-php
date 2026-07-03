@@ -37,6 +37,7 @@ test('null logger warning does not throw', function () {
 
 test('custom logger can be implemented', function () {
     $logger = new class implements Logger {
+        /** @var array<int, array{level: string, message: string, context: array}> */
         public array $logs = [];
 
         public function info(string $message, array $context = []): void

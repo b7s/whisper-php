@@ -158,35 +158,12 @@ final class WhisperDownloader
 
         $this->logger->info('Downloading whisper model', ['model' => $model, 'url' => $modelUrl]);
 
-        $process = new Process([
-            'curl', '-L', '-f',
-            '--retry', '3',
-            '--retry-delay', '2',
-            '-o', $modelPath,
-            $modelUrl,
-        ]);
-        $process->setTimeout(600);
-        $process->run();
-
-        if (! $process->isSuccessful()) {
-            $error = trim($process->getErrorOutput());
-            $this->logger->error('Failed to download Whisper model', [
-                'model' => $model,
-                'error' => $error,
-                'output' => $process->getOutput(),
-            ]);
-            @unlink($modelPath);
-
-            throw new WhisperException(
-                'Failed to download Whisper model',
-                $error ?: 'Network error or server unavailable'
-            );
-        }
+        $this->downloadFile($modelUrl, $modelPath, "Whisper model {$model}");
 
         $expectedMinSize = self::MODEL_MIN_SIZES[$model] ?? 10_000_000;
         $actualSize = file_exists($modelPath) ? filesize($modelPath) : 0;
 
-        if (! file_exists($modelPath) || $actualSize < $expectedMinSize) {
+        if ($actualSize < $expectedMinSize || ! file_exists($modelPath)) {
             $expectedMB = round($expectedMinSize / 1_000_000);
             $actualMB = round($actualSize / 1_000_000);
             $this->logger->error('Downloaded model file is invalid or incomplete', [
@@ -306,23 +283,7 @@ final class WhisperDownloader
     {
         $extractDir = dirname($this->paths->getFfmpegPath());
 
-        $process = $this->platform->isWindows()
-            ? new Process(['powershell', '-Command', "Expand-Archive -Path '{$zipPath}' -DestinationPath '{$extractDir}' -Force"])
-            : new Process(['unzip', '-o', $zipPath, '-d', $extractDir]);
-        
-        $process->run();
-        @unlink($zipPath);
-
-        if (! $process->isSuccessful()) {
-            $error = trim($process->getErrorOutput());
-            $this->logger->error('Failed to extract FFmpeg', ['error' => $error]);
-
-            throw new WhisperException('Failed to extract FFmpeg', $error);
-        }
-
-        $this->findAndRenameFfmpeg($extractDir);
-
-        return file_exists($this->paths->getFfmpegPath());
+        return $this->extractZipArchive($zipPath, $extractDir, 'FFmpeg', $this->findAndRenameFfmpeg(...), $this->paths->getFfmpegPath());
     }
 
     /**
@@ -331,21 +292,9 @@ final class WhisperDownloader
     private function extractFfmpegTarXz(string $tarPath): bool
     {
         $extractDir = dirname($this->paths->getFfmpegPath());
-
         $process = new Process(['tar', '-xJf', $tarPath, '-C', $extractDir]);
-        $process->run();
-        @unlink($tarPath);
 
-        if (! $process->isSuccessful()) {
-            $error = trim($process->getErrorOutput());
-            $this->logger->error('Failed to extract FFmpeg', ['error' => $error]);
-
-            throw new WhisperException('Failed to extract FFmpeg', $error);
-        }
-
-        $this->findAndRenameFfmpeg($extractDir);
-
-        return file_exists($this->paths->getFfmpegPath());
+        return $this->extractAndFinalize($process, $tarPath, 'FFmpeg', $this->findAndRenameFfmpeg(...), $extractDir, $this->paths->getFfmpegPath());
     }
 
     private function findAndRenameFfmpeg(string $dir): void
@@ -376,23 +325,7 @@ final class WhisperDownloader
     {
         $extractDir = dirname($this->paths->getBinaryPath());
 
-        $process = $this->platform->isWindows()
-            ? new Process(['powershell', '-Command', "Expand-Archive -Path '{$zipPath}' -DestinationPath '{$extractDir}' -Force"])
-            : new Process(['unzip', '-o', $zipPath, '-d', $extractDir]);
-        
-        $process->run();
-        @unlink($zipPath);
-
-        if (! $process->isSuccessful()) {
-            $error = trim($process->getErrorOutput());
-            $this->logger->error('Failed to extract Whisper binary', ['error' => $error]);
-
-            throw new WhisperException('Failed to extract Whisper binary', $error);
-        }
-
-        $this->findAndRenameBinary($extractDir);
-
-        return file_exists($this->paths->getBinaryPath());
+        return $this->extractZipArchive($zipPath, $extractDir, 'Whisper binary', $this->findAndRenameBinary(...), $this->paths->getBinaryPath());
     }
 
     /**
@@ -401,21 +334,38 @@ final class WhisperDownloader
     private function extractBinaryTarGz(string $tarPath): bool
     {
         $extractDir = dirname($this->paths->getBinaryPath());
-
         $process = new Process(['tar', '-xzf', $tarPath, '-C', $extractDir]);
+
+        return $this->extractAndFinalize($process, $tarPath, 'Whisper binary', $this->findAndRenameBinary(...), $extractDir, $this->paths->getBinaryPath());
+    }
+
+    /**
+     * @throws WhisperException
+     */
+    private function extractZipArchive(string $zipPath, string $extractDir, string $label, callable $findAndRename, string $expectedPath): bool
+    {
+        $process = $this->platform->isWindows()
+            ? new Process(['powershell', '-Command', "Expand-Archive -Path '{$zipPath}' -DestinationPath '{$extractDir}' -Force"])
+            : new Process(['unzip', '-o', $zipPath, '-d', $extractDir]);
+
+        return $this->extractAndFinalize($process, $zipPath, $label, $findAndRename, $extractDir, $expectedPath);
+    }
+
+    private function extractAndFinalize(Process $process, string $archivePath, string $label, callable $findAndRename, string $extractDir, string $expectedPath): bool
+    {
         $process->run();
-        @unlink($tarPath);
+        @unlink($archivePath);
 
         if (! $process->isSuccessful()) {
             $error = trim($process->getErrorOutput());
-            $this->logger->error('Failed to extract Whisper binary', ['error' => $error]);
+            $this->logger->error("Failed to extract {$label}", ['error' => $error]);
 
-            throw new WhisperException('Failed to extract Whisper binary', $error);
+            throw new WhisperException("Failed to extract {$label}", $error);
         }
 
-        $this->findAndRenameBinary($extractDir);
+        $findAndRename($extractDir);
 
-        return file_exists($this->paths->getBinaryPath());
+        return file_exists($expectedPath);
     }
 
     private function findAndRenameBinary(string $dir): void
@@ -425,7 +375,7 @@ final class WhisperDownloader
 
         foreach ($possibleNames as $name) {
             $path = "{$dir}/{$name}";
-            if (file_exists($path) && $path !== $binaryPath) {
+            if ($path !== $binaryPath && file_exists($path)) {
                 rename($path, $binaryPath);
                 chmod($binaryPath, 0755);
 
@@ -794,7 +744,7 @@ final class WhisperDownloader
                 $majorVersion = $matches[2];
 
                 $versionedSymlink = "{$libDir}/{$baseName}.{$majorVersion}.dylib";
-                if (! file_exists($versionedSymlink) && $versionedSymlink !== $lib) {
+                if ($versionedSymlink !== $lib && ! file_exists($versionedSymlink)) {
                     @symlink($basename, $versionedSymlink);
                 }
 

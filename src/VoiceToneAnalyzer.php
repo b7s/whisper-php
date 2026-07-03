@@ -47,10 +47,11 @@ final class VoiceToneAnalyzer
      *   soft: list<array{start: string, end: string, db: float, text: string}>,
      *   segments: list<array{start: string, end: string, db: float, tone: string, text: string}>,
      * }
+     * @throws WhisperException
      */
     public function analyzeWav(string $wavPath, array $segments, float $shoutThresholdDb = -10.0, float $softThresholdDb = -30.0): array
     {
-        if (!file_exists($wavPath) || empty($segments)) {
+        if (empty($segments) || !file_exists($wavPath)) {
             return $this->emptyResult();
         }
 
@@ -163,6 +164,7 @@ final class VoiceToneAnalyzer
 
     /**
      * @return array<int, int>
+     * @throws WhisperException
      */
     private function readWavSamples(string $path): array
     {
@@ -219,6 +221,9 @@ final class VoiceToneAnalyzer
         }
     }
 
+    /**
+     * @throws WhisperException
+     */
     private function readLine(mixed $handle, int $size): string
     {
         $data = fread($handle, max(1, $size));
@@ -228,6 +233,9 @@ final class VoiceToneAnalyzer
         return $data;
     }
 
+    /**
+     * @throws WhisperException
+     */
     private function readUint32(mixed $handle): int
     {
         $data = $this->readLine($handle, 4);
@@ -235,6 +243,9 @@ final class VoiceToneAnalyzer
         return $unpacked !== false ? $unpacked[1] : 0;
     }
 
+    /**
+     * @throws WhisperException
+     */
     private function readUint16(mixed $handle): int
     {
         $data = $this->readLine($handle, 2);
@@ -244,6 +255,7 @@ final class VoiceToneAnalyzer
 
     /**
      * @return array<int, int>
+     * @throws WhisperException
      */
     private function unpackSamples(mixed $handle, int $dataSize, int $bitsPerSample): array
     {
@@ -304,6 +316,9 @@ final class VoiceToneAnalyzer
         return array_values($signed);
     }
 
+    /**
+     * @throws WhisperException
+     */
     private function convertToWav(string $audioPath): string
     {
         $outputPath = $this->paths->getTempPath('voice_tone_wav_') . '.wav';
