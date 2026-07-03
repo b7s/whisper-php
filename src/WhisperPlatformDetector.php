@@ -65,6 +65,10 @@ final class WhisperPlatformDetector
             return $this->hasMacGpu() ? 'metal' : null;
         }
 
+        if ($os === 'windows') {
+            return $this->hasWindowsGpu() ? $this->getWindowsGpuType() : null;
+        }
+
         if ($this->hasNvidiaGpu()) {
             return 'cuda';
         }
@@ -74,6 +78,15 @@ final class WhisperPlatformDetector
         }
 
         return null;
+    }
+
+    private function getWindowsGpuType(): string
+    {
+        if ($this->hasNvidiaGpu()) {
+            return 'cuda';
+        }
+
+        return 'rocm';
     }
 
     /**
@@ -159,11 +172,6 @@ final class WhisperPlatformDetector
     private function hasWindowsGpu(): bool
     {
         return $this->hasNvidiaGpu() || $this->hasAmdGpuWindows();
-    }
-
-    private function hasLinuxGpu(): bool
-    {
-        return $this->hasNvidiaGpu() || $this->hasAmdGpu();
     }
 
     private function hasAmdGpuWindows(): bool

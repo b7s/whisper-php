@@ -7,15 +7,34 @@ namespace WhisperPHP;
 final class TranscriptionResult
 {
     /**
-     * Initialize the transcription result with text, segments, and detected language.
-     *
+     * @var array{
+     *   has_shouting: bool,
+     *   has_soft_speaking: bool,
+     *   shouting: list<array{start: string, end: string, db: float, text: string}>,
+     *   soft: list<array{start: string, end: string, db: float, text: string}>,
+     *   segments: list<array{start: string, end: string, db: float, tone: string, text: string}>,
+     * }
+     */
+    private readonly array $voiceTone;
+
+    /**
      * @param array<int, array{start: string, end: string, text: string, speaker?: int}> $segments
+     * @param array{
+     *   has_shouting: bool,
+     *   has_soft_speaking: bool,
+     *   shouting: list<array{start: string, end: string, db: float, text: string}>,
+     *   soft: list<array{start: string, end: string, db: float, text: string}>,
+     *   segments: list<array{start: string, end: string, db: float, tone: string, text: string}>,
+     * } $voiceTone
      */
     public function __construct(
         private readonly string $text,
         private readonly array $segments = [],
         private readonly ?string $detectedLanguage = null,
-    ) {}
+        array $voiceTone = ['has_shouting' => false, 'has_soft_speaking' => false, 'shouting' => [], 'soft' => [], 'segments' => []],
+    ) {
+        $this->voiceTone = $voiceTone;
+    }
 
     /**
      * Get the transcription as plain text.
@@ -41,6 +60,22 @@ final class TranscriptionResult
     public function detectedLanguage(): ?string
     {
         return $this->detectedLanguage;
+    }
+
+    /**
+     * Get the voice tone analysis results.
+     *
+     * @return array{
+     *   has_shouting: bool,
+     *   has_soft_speaking: bool,
+     *   shouting: list<array{start: string, end: string, db: float, text: string}>,
+     *   soft: list<array{start: string, end: string, db: float, text: string}>,
+     *   segments: list<array{start: string, end: string, db: float, tone: string, text: string}>,
+     * }
+     */
+    public function voiceTone(): array
+    {
+        return $this->voiceTone;
     }
 
     /**

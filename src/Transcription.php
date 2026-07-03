@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WhisperPHP;
 
+use Closure;
 use WhisperPHP\Exceptions\WhisperException;
 
 final class Transcription
@@ -116,16 +117,29 @@ final class Transcription
     /**
      * Set a callback to track transcription progress.
      *
-     * @param \Closure(int): void $callback
+     * @param Closure(int): void $callback
      */
-    public function onProgress(\Closure $callback): self
+    public function onProgress(Closure $callback): self
     {
         $this->options->onProgress($callback);
         return $this;
     }
 
     /**
-     * Set timeout for transcription process.
+     * Enable voice tone analysis to detect shouting or soft speaking.
+     * Use $result->voiceTone() to access the analysis after run().
+     *
+     * @param float $shoutThresholdDb Segments above this dBFS are considered shouting (default: -10.0)
+     * @param float $softThresholdDb Segments below this dBFS are considered soft/whisper (default: -30.0)
+     */
+    public function analyzeVoiceTone(float $shoutThresholdDb = -10.0, float $softThresholdDb = -30.0): self
+    {
+        $this->options->analyzeVoiceTone($shoutThresholdDb, $softThresholdDb);
+        return $this;
+    }
+
+    /**
+     * Set timeout for the transcription process.
      *
      * @param int|null $seconds Timeout in seconds (null = no timeout/unlimited)
      */

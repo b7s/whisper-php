@@ -101,6 +101,22 @@ test('transcription is fluent with progress callback', function () {
     expect($transcription)->toBeInstanceOf(Transcription::class);
 });
 
+test('transcription is fluent with voice tone analysis', function () {
+    $transcription = (new Transcription($this->transcriber))
+        ->file('/path/to/audio.mp3')
+        ->analyzeVoiceTone();
+
+    expect($transcription)->toBeInstanceOf(Transcription::class);
+});
+
+test('transcription is fluent with voice tone custom thresholds', function () {
+    $transcription = (new Transcription($this->transcriber))
+        ->file('/path/to/audio.mp3')
+        ->analyzeVoiceTone(-12.0, -28.0);
+
+    expect($transcription)->toBeInstanceOf(Transcription::class);
+});
+
 test('transcription can chain multiple options', function () {
     $transcription = (new Transcription($this->transcriber))
         ->file('/path/to/audio.mp3')
@@ -112,6 +128,7 @@ test('transcription can chain multiple options', function () {
         ->temperature(0.5)
         ->filterNonSpeech(0.6)
         ->detectSpeakers()
+        ->analyzeVoiceTone()
         ->onProgress(fn (int $p) => null);
 
     expect($transcription)->toBeInstanceOf(Transcription::class);

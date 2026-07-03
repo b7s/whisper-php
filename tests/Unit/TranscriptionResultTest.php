@@ -140,6 +140,36 @@ test('transcription result throws on unsupported format', function () {
     $result->saveTo('/tmp/test.xyz');
 })->throws(InvalidArgumentException::class);
 
+test('transcription result voice tone returns empty shape by default', function () {
+    $result = new TranscriptionResult('Hello');
+
+    expect($result->voiceTone())->toBe([
+        'has_shouting' => false,
+        'has_soft_speaking' => false,
+        'shouting' => [],
+        'soft' => [],
+        'segments' => [],
+    ]);
+});
+
+test('transcription result voice tone returns stored data', function () {
+    $toneData = [
+        'has_shouting' => true,
+        'has_soft_speaking' => false,
+        'shouting' => [
+            ['start' => '00:00:00.000', 'end' => '00:00:01.000', 'db' => -5.0, 'text' => 'LOUD'],
+        ],
+        'soft' => [],
+        'segments' => [
+            ['start' => '00:00:00.000', 'end' => '00:00:01.000', 'db' => -5.0, 'tone' => 'shouting', 'text' => 'LOUD'],
+        ],
+    ];
+
+    $result = new TranscriptionResult('LOUD', [], null, $toneData);
+
+    expect($result->voiceTone())->toBe($toneData);
+});
+
 test('transcription result can save txt format', function () {
     $result = new TranscriptionResult('Hello world');
     $tempFile = sys_get_temp_dir() . '/test_' . uniqid() . '.txt';

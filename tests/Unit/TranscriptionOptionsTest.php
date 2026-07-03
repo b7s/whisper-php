@@ -108,6 +108,22 @@ test('transcription options can set progress callback', function () {
     expect($options->getProgressCallback())->toBe($callback);
 });
 
+test('transcription options can enable voice tone analysis', function () {
+    $options = (new TranscriptionOptions())->analyzeVoiceTone(-8.0, -25.0);
+
+    expect($options->shouldAnalyzeVoiceTone())->toBeTrue()
+        ->and($options->getShoutThresholdDb())->toBe(-8.0)
+        ->and($options->getSoftThresholdDb())->toBe(-25.0);
+});
+
+test('transcription options voice tone analysis defaults', function () {
+    $options = (new TranscriptionOptions())->analyzeVoiceTone();
+
+    expect($options->shouldAnalyzeVoiceTone())->toBeTrue()
+        ->and($options->getShoutThresholdDb())->toBe(-10.0)
+        ->and($options->getSoftThresholdDb())->toBe(-30.0);
+});
+
 test('transcription options is fluent', function () {
     $options = (new TranscriptionOptions())
         ->withTimestamps()
@@ -117,7 +133,8 @@ test('transcription options is fluent', function () {
         ->improveDecode(5)
         ->temperature(0.5)
         ->filterNonSpeech(0.6)
-        ->detectSpeakers();
+        ->detectSpeakers()
+        ->analyzeVoiceTone();
 
     expect($options)->toBeInstanceOf(TranscriptionOptions::class)
         ->and($options->hasTimestamps())->toBeTrue()
@@ -129,5 +146,6 @@ test('transcription options is fluent', function () {
         ->and($options->getTemperature())->toBe(0.5)
         ->and($options->isVadEnabled())->toBeTrue()
         ->and($options->getVadThreshold())->toBe(0.6)
-        ->and($options->shouldDetectSpeakers())->toBeTrue();
+        ->and($options->shouldDetectSpeakers())->toBeTrue()
+        ->and($options->shouldAnalyzeVoiceTone())->toBeTrue();
 });

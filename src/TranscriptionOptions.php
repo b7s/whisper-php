@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace WhisperPHP;
 
+use Closure;
+
 final class TranscriptionOptions
 {
     private bool $withTimestamps = false;
@@ -17,11 +19,14 @@ final class TranscriptionOptions
     private bool $enableVad = false;
     private float $vadThreshold = 0.5;
     private bool $detectSpeakerChanges = false;
-    /** @var (\Closure(int): void)|null */
-    private ?\Closure $progressCallback = null;
+    /** @var (Closure(int): void)|null */
+    private ?Closure $progressCallback = null;
     private bool $enableChunking = false;
     private ?int $chunkSize = null;
     private ?int $timeout = null;
+    private bool $analyzeVoiceToneEnabled = false;
+    private float $shoutThresholdDb = -10.0;
+    private float $softThresholdDb = -30.0;
     private bool $timeoutExplicitlySet = false;
 
     public function withTimestamps(bool $enabled = true): self
@@ -85,9 +90,9 @@ final class TranscriptionOptions
     }
 
     /**
-     * @param \Closure(int): void $callback
+     * @param Closure(int): void $callback
      */
-    public function onProgress(\Closure $callback): self
+    public function onProgress(Closure $callback): self
     {
         $this->progressCallback = $callback;
         return $this;
@@ -149,11 +154,25 @@ final class TranscriptionOptions
     }
 
     /**
-     * @return (\Closure(int): void)|null
+     * @return (Closure(int): void)|null
      */
-    public function getProgressCallback(): ?\Closure
+    public function getProgressCallback(): ?Closure
     {
         return $this->progressCallback;
+    }
+
+    /**
+     * Enable voice tone analysis (shouting / soft speaking detection).
+     *
+     * @param float $shoutThresholdDb Segments above this dBFS are classified as shouting (default: -10.0)
+     * @param float $softThresholdDb Segments below this dBFS are classified as soft/whisper (default: -30.0)
+     */
+    public function analyzeVoiceTone(float $shoutThresholdDb = -10.0, float $softThresholdDb = -30.0): self
+    {
+        $this->analyzeVoiceToneEnabled = true;
+        $this->shoutThresholdDb = $shoutThresholdDb;
+        $this->softThresholdDb = $softThresholdDb;
+        return $this;
     }
 
     /**
@@ -176,6 +195,21 @@ final class TranscriptionOptions
     public function getChunkSize(): ?int
     {
         return $this->chunkSize;
+    }
+
+    public function shouldAnalyzeVoiceTone(): bool
+    {
+        return $this->analyzeVoiceToneEnabled;
+    }
+
+    public function getShoutThresholdDb(): float
+    {
+        return $this->shoutThresholdDb;
+    }
+
+    public function getSoftThresholdDb(): float
+    {
+        return $this->softThresholdDb;
     }
 
     /**

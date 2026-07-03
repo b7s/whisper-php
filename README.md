@@ -477,6 +477,93 @@ $segments = $whisper->audio('/path/to/conversation.mp3')
 -   Works best with clear audio and distinct voices
 -   May struggle with overlapping speech
 
+### Voice Tone Analysis
+
+**What it does:** Automatically analyzes the audio loudness of each transcribed segment to detect when someone is **shouting** or speaking **very softly**. Returns decibel (dBFS) levels and classifies each segment by tone. Useful for moderation, call center analysis, lecture reviews, or any scenario where voice tone matters.
+
+```php
+// Analyze voice tone after transcription
+$result = $whisper->audio('/path/to/audio.mp3')
+    ->analyzeVoiceTone()
+    ->run();
+
+$tone = $result->voiceTone();
+
+// Check if any shouting or soft speaking was detected
+if ($tone['has_shouting']) {
+    echo "Shouting detected at:\n";
+    foreach ($tone['shouting'] as $segment) {
+        echo "  [{$segment['start']} - {$segment['end']}] {$segment['text']}\n";
+    }
+}
+
+if ($tone['has_soft_speaking']) {
+    echo "Soft/whisper detected at:\n";
+    foreach ($tone['soft'] as $segment) {
+        echo "  [{$segment['start']} - {$segment['end']}] {$segment['text']}\n";
+    }
+}
+
+// Inspect all segments with tone and dB levels
+foreach ($tone['segments'] as $segment) {
+    echo "{$segment['tone']} ({$segment['db']} dBFS): {$segment['text']}\n";
+}
+```
+
+**Custom thresholds:**
+
+```php
+// Adjust sensitivity for shouting and soft speaking detection
+$result = $whisper->audio('/path/to/audio.mp3')
+    ->analyzeVoiceTone(
+        shoutThresholdDb: -8.0,  // Default: -10 dBFS (higher = less sensitive)
+        softThresholdDb: -28.0,  // Default: -30 dBFS (higher = more sensitive)
+    )
+    ->run();
+```
+
+**How it works:**
+
+Audio is analyzed independently from transcription using the original audio file. Unlike the VAD filter (which detects speech vs silence), this measures actual acoustic energy. The original audio is converted to a clean WAV signal (without normalization) and per-segment RMS energy is computed and converted to dBFS relative to full scale.
+
+**Threshold guide:**
+
+-   `shoutThresholdDb` (default `-10.0`): Segments above this level are classified as shouting. A typical conversation averages around -18 dBFS. Shouting is usually above -10 dBFS.
+    -   `-8.0` = Less sensitive (only very loud segments)
+    -   `-12.0` = More sensitive (catches raised voices too)
+-   `softThresholdDb` (default `-30.0`): Segments below this level are classified as soft/whisper.
+    -   `-25.0` = Less sensitive (only whispers)
+    -   `-35.0` = More sensitive (includes quiet speech)
+
+**Use cases:**
+
+-   Moderating user-generated audio content
+-   Detecting agitated speakers in call centers
+-   Finding whispered or confidential conversation parts
+-   Analyzing lecture delivery (emphasized vs mumbled sections)
+-   Content filtering for loud/disturbing audio
+
+**Result structure:**
+
+```php
+$tone = $result->voiceTone();
+// [
+//   'has_shouting'      => true,                    // Any shouting segments?
+//   'has_soft_speaking' => true,                    // Any soft segments?
+//   'shouting' => [                                 // Only shouting segments
+//       ['start' => '00:00:05.000', 'end' => '00:00:08.000', 'db' => -6.5, 'text' => '...'],
+//   ],
+//   'soft' => [                                     // Only soft segments
+//       ['start' => '00:00:20.000', 'end' => '00:00:23.000', 'db' => -35.2, 'text' => '...'],
+//   ],
+//   'segments' => [                                 // All segments with tone annotation
+//       ['start' => ..., 'end' => ..., 'db' => -15.3, 'tone' => 'normal', 'text' => '...'],
+//       ['start' => ..., 'end' => ..., 'db' => -6.5, 'tone' => 'shouting', 'text' => '...'],
+//       ['start' => ..., 'end' => ..., 'db' => -35.2, 'tone' => 'soft', 'text' => '...'],
+//   ],
+// ]
+```
+
 ### Progress Callback
 
 **What it does:** Allows you to monitor transcription progress in real-time. Useful for long audio files where you want to show a progress bar or status updates to users.
@@ -834,6 +921,7 @@ $result->toVtt();             // VTT format string
 $result->toJson();            // JSON format string (compact)
 $result->toJson(true);        // JSON format string (pretty-printed)
 $result->toCsv();             // CSV format string
+$result->voiceTone();         // Voice tone analysis (shouting/soft detection)
 $result->saveTo('file.srt');  // Save to file
 ```
 

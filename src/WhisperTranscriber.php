@@ -73,20 +73,26 @@ final class WhisperTranscriber
         }
 
         if ($shouldChunk) {
-            return $this->transcribeWithChunking($audioPath, $options, $isVideo);
+            $result = $this->transcribeWithChunking($audioPath, $options, $isVideo);
+        } else {
+            $tempWavPath = $this->convertFileToWav($audioPath);
+
+            try {
+                $result = $this->runWhisper($tempWavPath, $options);
+            } finally {
+                @unlink($tempWavPath);
+            }
         }
 
-        $tempWavPath = $this->convertFileToWav($audioPath);
-
-        try {
-            return $this->runWhisper($tempWavPath, $options);
-        } finally {
-            @unlink($tempWavPath);
+        if ($options->shouldAnalyzeVoiceTone()) {
+            $result = $this->addVoiceToneAnalysis($result, $audioPath, $options);
         }
+
+        return $result;
     }
 
     /**
-     * Check if the file is a video based on extension.
+     * Check if the file is a video based on an extension.
      */
     public function isVideoFile(string $filePath): bool
     {
@@ -114,7 +120,7 @@ final class WhisperTranscriber
 
         try {
             $fileSize = filesize($audioPath);
-            
+
             // If file is smaller than chunk size, process normally
             if ($fileSize !== false && $fileSize <= $chunkSize) {
                 $this->logger->info('File size within chunk limit, processing without splitting', [
@@ -132,7 +138,7 @@ final class WhisperTranscriber
 
             return $this->processInChunks($audioPath, $options, $chunkSize);
         } finally {
-            if ($isVideo && isset($audioPath) && $audioPath !== $inputPath) {
+            if ($isVideo && $audioPath !== $inputPath) {
                 @unlink($audioPath);
             }
         }
@@ -633,7 +639,7 @@ final class WhisperTranscriber
         // "whisper_full_with_state: auto-detected language = en"
         // "detected language: en"
         // "whisper_full_default: processing 1600 samples, 0.1 sec, 1 threads, 1 processors, lang = en, task = transcribe"
-        
+
         $patterns = [
             '/auto-detected language:\s*(\w+)/i',
             '/auto-detected language\s*=\s*(\w+)/i',
@@ -641,13 +647,13 @@ final class WhisperTranscriber
             '/lang\s*=\s*(\w{2,3})/i',
             '/language:\s*(\w{2,3})(?:\s|$|\()/i',
         ];
-        
+
         foreach ($patterns as $pattern) {
             if (preg_match($pattern, $errorOutput, $matches)) {
                 return $matches[1];
             }
         }
-        
+
         return null;
     }
 
@@ -660,6 +666,29 @@ final class WhisperTranscriber
         }
 
         return new TranscriptionResult($output, [], $detectedLanguage);
+    }
+
+    private function addVoiceToneAnalysis(TranscriptionResult $result, string $audioPath, TranscriptionOptions $options): TranscriptionResult
+    {
+        try {
+            $analyzer = new VoiceToneAnalyzer($this->paths, $this->logger);
+            $toneData = $analyzer->analyze(
+                $audioPath,
+                $result->segments(),
+                $options->getShoutThresholdDb(),
+                $options->getSoftThresholdDb()
+            );
+
+            return new TranscriptionResult(
+                $result->toText(),
+                $result->segments(),
+                $result->detectedLanguage(),
+                $toneData
+            );
+        } catch (\Throwable $e) {
+            $this->logger->warning('Voice tone analysis failed', ['error' => $e->getMessage()]);
+            return $result;
+        }
     }
 
     /**
