@@ -12,7 +12,7 @@ help:
 	@echo "  make test-types      - Run PHPStan static analysis"
 	@echo "  make test-coverage   - Run tests with coverage report"
 	@echo "  make test-plugin     - Test Composer plugin in fresh project"
-	@echo "  make release version=x.y.z message='msg' - Run tests and create Git tag"
+	@echo "  make release version=x.y.z message='msg' - Run tests, catraca gate, and create Git tag"
 	@echo "  make clean           - Clean cache and temporary files"
 
 # Install dependencies
@@ -79,6 +79,12 @@ release:
 		echo "❌ Tests failed. Fix issues before releasing."; \
 		exit 1; \
 	fi; \
+	echo "🧹 Running catraca quality gate..."; \
+	if ! vendor/bin/catraca; then \
+		echo "❌ Catraca quality gate failed. Fix all issues before releasing."; \
+		exit 1; \
+	fi; \
+	echo "✅ All quality gates passed."; \
 	echo "🔍 Checking for uncommitted changes..."; \
 	if ! git diff --quiet || ! git diff --cached --quiet; then \
 		echo "📝 Found uncommitted changes. Staging files..."; \
